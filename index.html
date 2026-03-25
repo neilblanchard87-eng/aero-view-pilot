@@ -7,24 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        body { 
-            background: radial-gradient(circle at 50% 0%, #1e293b, #000); 
-            min-height: 100vh; 
-            color: white; 
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-        }
-        .glass { 
-            background: rgba(255, 255, 255, 0.03); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
-        }
-        .active-tab {
-            background: #22d3ee; /* Cyan-400 */
-            color: #000;
-        }
-        .color-hex { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+        body { background: radial-gradient(circle at 50% 0%, #1e293b, #000); min-height: 100vh; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
+        .active-tab { background: #22d3ee; color: #000; }
     </style>
 </head>
 <body class="p-6">
@@ -32,85 +17,50 @@
     <div class="max-w-md mx-auto">
         <header class="flex justify-between items-end mb-10">
             <div>
-                <h1 class="text-3xl font-black italic tracking-tighter leading-none uppercase">AERO<span class="text-cyan-400">VIEW</span></h1>
-                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">SENSORY_CONTROL_UNIT</p>
+                <h1 class="text-3xl font-black italic tracking-tighter uppercase">AERO<span class="text-cyan-400">VIEW</span></h1>
+                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">TELEMETRY_LINK_ACTIVE</p>
             </div>
-            <div class="flex flex-col items-end">
-                <div class="flex items-center space-x-2">
-                    <span class="text-[10px] font-bold text-green-500 uppercase">Live</span>
-                    <div class="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-            </div>
+            <div id="gps-status" class="text-[10px] font-bold text-red-500 uppercase">GPS: OFFLINE</div>
         </header>
 
         <div class="flex p-1 mb-8 glass rounded-2xl">
             <button onclick="switchTab('controls')" id="btn-controls" class="flex-1 py-3 rounded-xl text-xs font-black tracking-widest transition-all active-tab">CONTROLS</button>
-            <button onclick="switchTab('logs')" id="btn-logs" class="flex-1 py-3 rounded-xl text-xs font-black tracking-widest text-gray-500 transition-all">MISSION LOGS</button>
+            <button onclick="switchTab('logs')" id="btn-logs" class="flex-1 py-3 rounded-xl text-xs font-black tracking-widest text-gray-500 transition-all">LOGS</button>
         </div>
 
         <div id="tab-controls" class="space-y-6">
-            
             <div class="glass p-6 rounded-[2rem]">
                 <h2 class="text-[10px] font-mono text-gray-500 mb-6 uppercase tracking-[0.2em]">Select HUD Signature</h2>
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="updateColor('#00FFFF')" class="flex flex-col items-center p-4 glass rounded-2xl border-t border-white/10 active:scale-95 transition-transform">
-                        <div class="w-full h-8 bg-[#00FFFF] rounded-lg shadow-[0_0_15px_rgba(0,255,255,0.4)] mb-2"></div>
-                        <span class="text-[10px] font-bold">CYAN</span>
+                        <div class="w-full h-8 bg-[#00FFFF] rounded-lg mb-2 shadow-[0_0_15px_rgba(0,255,255,0.4)]"></div>
+                        <span class="text-[10px] font-bold tracking-widest">CYAN</span>
                     </button>
                     <button onclick="updateColor('#FF007F')" class="flex flex-col items-center p-4 glass rounded-2xl border-t border-white/10 active:scale-95 transition-transform">
-                        <div class="w-full h-8 bg-[#FF007F] rounded-lg shadow-[0_0_15px_rgba(255,0,127,0.4)] mb-2"></div>
-                        <span class="text-[10px] font-bold">PINK</span>
-                    </button>
-                    <button onclick="updateColor('#39FF14')" class="flex flex-col items-center p-4 glass rounded-2xl border-t border-white/10 active:scale-95 transition-transform">
-                        <div class="w-full h-8 bg-[#39FF14] rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.4)] mb-2"></div>
-                        <span class="text-[10px] font-bold">GREEN</span>
-                    </button>
-                    <button onclick="updateColor('#FFAA00')" class="flex flex-col items-center p-4 glass rounded-2xl border-t border-white/10 active:scale-95 transition-transform">
-                        <div class="w-full h-8 bg-[#FFAA00] rounded-lg shadow-[0_0_15px_rgba(255,170,0,0.4)] mb-2"></div>
-                        <span class="text-[10px] font-bold">AMBER</span>
+                        <div class="w-full h-8 bg-[#FF007F] rounded-lg mb-2 shadow-[0_0_15px_rgba(255,0,127,0.4)]"></div>
+                        <span class="text-[10px] font-bold tracking-widest">PINK</span>
                     </button>
                 </div>
             </div>
 
-            <div class="glass p-6 rounded-[2rem] flex justify-between items-center">
-                <div>
-                    <h2 class="font-black text-sm uppercase tracking-tight">AI Augmented Hazard</h2>
-                    <p class="text-[10px] text-gray-500 uppercase mt-1">Collision Awareness Engine</p>
+            <div class="glass p-6 rounded-[2rem] grid grid-cols-2 gap-4">
+                <div class="text-center">
+                    <p class="text-[9px] text-gray-500 uppercase tracking-widest">GPS Speed</p>
+                    <p id="live-speed" class="text-2xl font-black text-cyan-400">0 <span class="text-xs text-white">MPH</span></p>
                 </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="hazard-toggle" onchange="toggleHazards(this.checked)" checked class="sr-only peer">
-                    <div class="w-14 h-7 bg-white/5 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white/20 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500 peer-checked:after:bg-white shadow-inner"></div>
-                </label>
+                <div class="text-center">
+                    <p class="text-[9px] text-gray-500 uppercase tracking-widest">Heading</p>
+                    <p id="live-heading" class="text-2xl font-black text-white">---°</p>
+                </div>
             </div>
 
-            <div class="glass p-6 rounded-[2rem] flex items-center justify-around">
-                <div class="text-center">
-                    <p class="text-[9px] text-gray-500 uppercase tracking-widest">Network</p>
-                    <p class="text-xs font-bold">5G_ULTRA</p>
-                </div>
-                <div class="h-8 w-px bg-white/10"></div>
-                <div class="text-center">
-                    <p class="text-[9px] text-gray-500 uppercase tracking-widest">FPS</p>
-                    <p class="text-xs font-bold text-cyan-400">60.0</p>
-                </div>
-                <div class="h-8 w-px bg-white/10"></div>
-                <div class="text-center">
-                    <p class="text-[9px] text-gray-500 uppercase tracking-widest">AI Latency</p>
-                    <p class="text-xs font-bold">12ms</p>
-                </div>
-            </div>
+            <button onclick="requestTelemetry()" class="w-full py-4 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400 animate-pulse">
+                INITIALIZE SENSOR LINK
+            </button>
         </div>
 
         <div id="tab-logs" class="hidden space-y-4">
-            <div class="flex justify-between items-center px-2">
-                <h2 class="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em]">Live Data Stream</h2>
-                <span class="text-[9px] bg-white/10 px-2 py-1 rounded">SECURE_SYNC</span>
-            </div>
-            <div id="log-container" class="space-y-3">
-                <div class="glass p-8 rounded-3xl text-center opacity-50">
-                    <p class="text-xs italic">Awaiting Telemetry...</p>
-                </div>
-            </div>
+             <div id="log-container" class="space-y-3"></div>
         </div>
     </div>
 
@@ -118,7 +68,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, updateDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Your Config
         const firebaseConfig = {
             apiKey: "AIzaSyBJgr9zdA4j1U-50b9TRfsoqrE3pIxmee4",
             authDomain: "aero-view-alpha.firebaseapp.com",
@@ -132,54 +81,39 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // HUD Control Logic
+        // Update HUD Config
         window.updateColor = async (hex) => {
-            const docRef = doc(db, "settings", "hud_config");
-            try {
-                await updateDoc(docRef, { color: hex });
-                console.log("Color updated to " + hex);
-            } catch (e) { console.error("Update failed", e); }
+            await updateDoc(doc(db, "settings", "hud_config"), { color: hex });
         };
 
-        window.toggleHazards = async (val) => {
-            const docRef = doc(db, "settings", "hud_config");
-            await updateDoc(docRef, { show_hazards: val });
+        // TELEMETRY ENGINE
+        window.requestTelemetry = () => {
+            if ("geolocation" in navigator) {
+                document.getElementById('gps-status').innerText = "GPS: SYNCING";
+                document.getElementById('gps-status').className = "text-[10px] font-bold text-cyan-400 uppercase";
+                
+                navigator.geolocation.watchPosition(async (position) => {
+                    const speed = position.coords.speed ? Math.round(position.coords.speed * 2.23694) : 0; // Convert m/s to mph
+                    const heading = position.coords.heading || 0;
+                    
+                    document.getElementById('live-speed').innerHTML = `${speed} <span class="text-xs text-white">MPH</span>`;
+                    document.getElementById('live-heading').innerText = `${Math.round(heading)}°`;
+
+                    // Push to Firebase
+                    await updateDoc(doc(db, "settings", "hud_config"), { 
+                        gps_speed: speed,
+                        heading: heading
+                    });
+                }, (err) => console.error(err), { enableHighAccuracy: true });
+            }
         };
 
         window.switchTab = (tab) => {
-            const isControls = tab === 'controls';
-            document.getElementById('tab-controls').classList.toggle('hidden', !isControls);
-            document.getElementById('tab-logs').classList.toggle('hidden', isControls);
-            
-            document.getElementById('btn-controls').classList.toggle('active-tab', isControls);
-            document.getElementById('btn-controls').classList.toggle('text-gray-500', !isControls);
-            document.getElementById('btn-logs').classList.toggle('active-tab', !isControls);
-            document.getElementById('btn-logs').classList.toggle('text-gray-500', isControls);
+            document.getElementById('tab-controls').classList.toggle('hidden', tab !== 'controls');
+            document.getElementById('tab-logs').classList.toggle('hidden', tab !== 'logs');
+            document.getElementById('btn-controls').classList.toggle('active-tab', tab === 'controls');
+            document.getElementById('btn-logs').classList.toggle('active-tab', tab === 'logs');
         };
-
-        // Telemetry Stream
-        const q = query(collection(db, "mission_logs"), orderBy("timestamp", "desc"), limit(6));
-        onSnapshot(q, (snapshot) => {
-            const container = document.getElementById('log-container');
-            container.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                const timeStr = data.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) || "SYNCING";
-                
-                container.innerHTML += `
-                    <div class="glass p-5 rounded-[1.5rem] border-l-4 ${data.event_type === 'car' ? 'border-cyan-400' : 'border-red-500'} flex justify-between items-center">
-                        <div>
-                            <p class="text-[9px] font-mono text-gray-500 uppercase">${timeStr}</p>
-                            <p class="font-black text-sm tracking-tight text-white">${data.event_type.toUpperCase()} DETECTED</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[8px] text-gray-500 uppercase">Confidence</p>
-                            <p class="text-xl font-black text-cyan-400 leading-none">${(data.ai_confidence * 100).toFixed(0)}%</p>
-                        </div>
-                    </div>
-                `;
-            });
-        });
     </script>
 </body>
 </html>
