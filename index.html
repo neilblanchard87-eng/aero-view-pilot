@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AERO-VIEW | Pilot App v1.4</title>
+    <title>AERO-VIEW | Pilot App v1.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         body { background: radial-gradient(circle at 50% 0%, #1e293b, #000); min-height: 100vh; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
-        .active-tab { background: #22d3ee; color: #000; }
         .neon-text { text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
     </style>
 </head>
@@ -19,27 +18,27 @@
         <header class="flex justify-between items-end mb-10">
             <div>
                 <h1 class="text-3xl font-black italic tracking-tighter uppercase">AERO<span class="text-cyan-400">VIEW</span></h1>
-                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">SENSORY_LINK_v1.4</p>
+                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">SENSORY_LINK_v1.5</p>
             </div>
             <div id="gps-status" class="text-[10px] font-bold text-red-500 uppercase">GPS: OFFLINE</div>
         </header>
 
         <div class="grid grid-cols-2 gap-4 mb-8">
-            <div class="glass p-6 rounded-[2rem] text-center border-t border-white/10">
-                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Live Velocity</p>
+            <div class="glass p-6 rounded-[2rem] text-center">
+                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Velocity</p>
                 <p id="live-speed" class="text-4xl font-black text-cyan-400 neon-text">0</p>
                 <p class="text-[10px] font-bold text-gray-400">MPH</p>
             </div>
-            <div class="glass p-6 rounded-[2rem] text-center border-t border-white/10">
-                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Heading</p>
-                <p id="live-heading" class="text-4xl font-black text-white italic">---°</p>
-                <p id="cardinal-dir" class="text-[10px] font-bold text-gray-400 uppercase">Stationary</p>
+            <div class="glass p-6 rounded-[2rem] text-center">
+                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">G-Force</p>
+                <p id="live-g" class="text-4xl font-black text-white italic">0.0</p>
+                <p class="text-[10px] font-bold text-gray-400 uppercase">LATERAL</p>
             </div>
         </div>
 
         <div class="space-y-4 mb-10">
-            <button id="init-btn" class="w-full py-5 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400 active:scale-95 transition-all">
-                INITIALIZE MISSION LINK
+            <button id="init-btn" class="w-full py-5 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400">
+                INITIALIZE SENSOR ARRAY
             </button>
             
             <div class="grid grid-cols-2 gap-4">
@@ -49,7 +48,7 @@
         </div>
 
         <div class="glass p-4 rounded-2xl font-mono text-[10px] text-gray-500">
-            <p class="text-cyan-400 mb-2 uppercase tracking-widest border-b border-white/5 pb-1 text-[8px]">Real-time Telemetry Console</p>
+            <p class="text-cyan-400 mb-2 uppercase tracking-widest border-b border-white/5 pb-1 text-[8px]">Real-time Telemetry</p>
             <div id="console-out" class="space-y-1 h-20 overflow-y-auto">
                 <p>> System Standby...</p>
             </div>
@@ -79,59 +78,47 @@
             out.scrollTop = out.scrollHeight;
         };
 
-        // --- ATTACH EVENTS DIRECTLY IN THE SCRIPT (The Module Way) ---
+        document.getElementById('color-cyan').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#00FFFF' }));
+        document.getElementById('color-pink').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#FF007F' }));
 
-        document.getElementById('color-cyan').addEventListener('click', async () => {
-            await updateDoc(doc(db, "settings", "hud_config"), { color: '#00FFFF' });
-            log("Signal: Theme -> Cyan");
-        });
-
-        document.getElementById('color-pink').addEventListener('click', async () => {
-            await updateDoc(doc(db, "settings", "hud_config"), { color: '#FF007F' });
-            log("Signal: Theme -> Pink");
-        });
-
-        document.getElementById('init-btn').addEventListener('click', () => {
-            log("Link Command Received.");
-            
-            // Haptic Feedback (Android/Chrome)
+        document.getElementById('init-btn').addEventListener('click', async () => {
+            log("Initializing Sensors...");
             if (navigator.vibrate) navigator.vibrate(50);
 
-            if (!("geolocation" in navigator)) {
-                log("Fatal: GPS Hardware Not Detected.");
-                return;
+            // 1. Request Motion Permissions (iOS requirement)
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                const response = await DeviceMotionEvent.requestPermission();
+                if (response !== 'granted') { log("Motion Permission Denied."); return; }
             }
 
-            log("Requesting Sat-Link...");
-            const statusEl = document.getElementById('gps-status');
-
-            navigator.geolocation.watchPosition(async (position) => {
-                log("Sat-Link: SECURED");
-                statusEl.innerText = "GPS: ACTIVE";
-                statusEl.className = "text-[10px] font-bold text-cyan-400 uppercase";
+            // 2. Start G-Force Tracking
+            window.addEventListener('devicemotion', (event) => {
+                const gx = event.accelerationIncludingGravity.x || 0;
+                const gy = event.accelerationIncludingGravity.y || 0;
+                document.getElementById('live-g').innerText = (Math.abs(gx)/9.8).toFixed(1);
                 
-                const speedMPH = Math.round((position.coords.speed || 0) * 2.23694);
-                const heading = position.coords.heading || 0;
-
-                document.getElementById('live-speed').innerText = speedMPH;
-                document.getElementById('live-heading').innerText = `${Math.round(heading)}°`;
-                
-                const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-                document.getElementById('cardinal-dir').innerText = directions[Math.round(heading / 45) % 8];
-
-                try {
-                    await updateDoc(doc(db, "settings", "hud_config"), { 
-                        gps_speed: speedMPH,
-                        heading: heading
+                // Throttled update to cloud
+                if (Date.now() % 5 === 0) {
+                    updateDoc(doc(db, "settings", "hud_config"), { 
+                        g_force_x: gx, 
+                        g_force_y: gy 
                     });
-                } catch (e) { log("Cloud Error: Sync Interrupted."); }
+                }
+            });
 
-            }, (error) => {
-                log(`GPS Error Code: ${error.code}`);
-                statusEl.innerText = "GPS: ERROR " + error.code;
-            }, { enableHighAccuracy: true, timeout: 5000 });
+            // 3. Start GPS Tracking
+            navigator.geolocation.watchPosition(async (position) => {
+                document.getElementById('gps-status').innerText = "GPS: ACTIVE";
+                const speedMPH = Math.round((position.coords.speed || 0) * 2.23694);
+                document.getElementById('live-speed').innerText = speedMPH;
+                
+                updateDoc(doc(db, "settings", "hud_config"), { 
+                    gps_speed: speedMPH,
+                    heading: position.coords.heading || 0
+                });
+            }, null, { enableHighAccuracy: true });
 
-            document.getElementById('init-btn').innerText = "SYSTEMS LINKED";
+            document.getElementById('init-btn').innerText = "ARRAY ACTIVE";
             document.getElementById('init-btn').className = "w-full py-5 glass border-green-500/30 rounded-2xl text-xs font-black tracking-[0.3em] text-green-500 pointer-events-none";
         });
     </script>
