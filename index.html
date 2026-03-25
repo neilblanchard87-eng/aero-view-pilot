@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AERO-VIEW | Pilot App v1.5</title>
+    <title>AERO-VIEW | Pilot App v1.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
@@ -18,39 +18,38 @@
         <header class="flex justify-between items-end mb-10">
             <div>
                 <h1 class="text-3xl font-black italic tracking-tighter uppercase">AERO<span class="text-cyan-400">VIEW</span></h1>
-                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">SENSORY_LINK_v1.5</p>
+                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">SENSORY_LINK_v1.6</p>
             </div>
-            <div id="gps-status" class="text-[10px] font-bold text-red-500 uppercase">GPS: OFFLINE</div>
+            <div id="gps-status" class="text-[10px] font-bold text-red-500 uppercase tracking-tighter">GPS: OFFLINE</div>
         </header>
 
         <div class="grid grid-cols-2 gap-4 mb-8">
-            <div class="glass p-6 rounded-[2rem] text-center">
+            <div class="glass p-6 rounded-[2rem] text-center border-t border-white/10">
                 <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Velocity</p>
                 <p id="live-speed" class="text-4xl font-black text-cyan-400 neon-text">0</p>
-                <p class="text-[10px] font-bold text-gray-400">MPH</p>
+                <p class="text-[10px] font-bold text-gray-400 uppercase">MPH</p>
             </div>
-            <div class="glass p-6 rounded-[2rem] text-center">
-                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">G-Force</p>
-                <p id="live-g" class="text-4xl font-black text-white italic">0.0</p>
-                <p class="text-[10px] font-bold text-gray-400 uppercase">LATERAL</p>
+            <div class="glass p-6 rounded-[2rem] text-center border-t border-white/10">
+                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Steering</p>
+                <p id="live-tilt" class="text-4xl font-black text-white italic">0°</p>
+                <p class="text-[10px] font-bold text-gray-400 uppercase">ACTIVE_ROLL</p>
             </div>
         </div>
 
         <div class="space-y-4 mb-10">
-            <button id="init-btn" class="w-full py-5 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400">
+            <button id="init-btn" class="w-full py-5 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400 active:scale-95 transition-all">
                 INITIALIZE SENSOR ARRAY
             </button>
-            
             <div class="grid grid-cols-2 gap-4">
-                <button id="color-cyan" class="py-4 glass rounded-2xl border-b-2 border-cyan-500 text-[10px] font-black">CYAN MODE</button>
-                <button id="color-pink" class="py-4 glass rounded-2xl border-b-2 border-pink-500 text-[10px] font-black">PINK MODE</button>
+                <button id="color-cyan" class="py-4 glass rounded-2xl border-b-2 border-cyan-500 text-[10px] font-black uppercase">Cyan Mode</button>
+                <button id="color-pink" class="py-4 glass rounded-2xl border-b-2 border-pink-500 text-[10px] font-black uppercase">Pink Mode</button>
             </div>
         </div>
 
         <div class="glass p-4 rounded-2xl font-mono text-[10px] text-gray-500">
-            <p class="text-cyan-400 mb-2 uppercase tracking-widest border-b border-white/5 pb-1 text-[8px]">Real-time Telemetry</p>
+            <p id="console-title" class="text-cyan-400 mb-2 uppercase tracking-widest border-b border-white/5 pb-1">Telemetry Stream</p>
             <div id="console-out" class="space-y-1 h-20 overflow-y-auto">
-                <p>> System Standby...</p>
+                <p>> System Standby. Awaiting Auth...</p>
             </div>
         </div>
     </div>
@@ -65,62 +64,4 @@
             projectId: "aero-view-alpha",
             storageBucket: "aero-view-alpha.firebasestorage.app",
             messagingSenderId: "239183849355",
-            appId: "1:239183849355:web:5d19770237b2565148718e",
-            measurementId: "G-E3CNWW9JJB"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        const log = (msg) => {
-            const out = document.getElementById('console-out');
-            out.innerHTML += `<p>> ${msg}</p>`;
-            out.scrollTop = out.scrollHeight;
-        };
-
-        document.getElementById('color-cyan').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#00FFFF' }));
-        document.getElementById('color-pink').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#FF007F' }));
-
-        document.getElementById('init-btn').addEventListener('click', async () => {
-            log("Initializing Sensors...");
-            if (navigator.vibrate) navigator.vibrate(50);
-
-            // 1. Request Motion Permissions (iOS requirement)
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                const response = await DeviceMotionEvent.requestPermission();
-                if (response !== 'granted') { log("Motion Permission Denied."); return; }
-            }
-
-            // 2. Start G-Force Tracking
-            window.addEventListener('devicemotion', (event) => {
-                const gx = event.accelerationIncludingGravity.x || 0;
-                const gy = event.accelerationIncludingGravity.y || 0;
-                document.getElementById('live-g').innerText = (Math.abs(gx)/9.8).toFixed(1);
-                
-                // Throttled update to cloud
-                if (Date.now() % 5 === 0) {
-                    updateDoc(doc(db, "settings", "hud_config"), { 
-                        g_force_x: gx, 
-                        g_force_y: gy 
-                    });
-                }
-            });
-
-            // 3. Start GPS Tracking
-            navigator.geolocation.watchPosition(async (position) => {
-                document.getElementById('gps-status').innerText = "GPS: ACTIVE";
-                const speedMPH = Math.round((position.coords.speed || 0) * 2.23694);
-                document.getElementById('live-speed').innerText = speedMPH;
-                
-                updateDoc(doc(db, "settings", "hud_config"), { 
-                    gps_speed: speedMPH,
-                    heading: position.coords.heading || 0
-                });
-            }, null, { enableHighAccuracy: true });
-
-            document.getElementById('init-btn').innerText = "ARRAY ACTIVE";
-            document.getElementById('init-btn').className = "w-full py-5 glass border-green-500/30 rounded-2xl text-xs font-black tracking-[0.3em] text-green-500 pointer-events-none";
-        });
-    </script>
-</body>
-</html>
+            appId: "1:23918384935
