@@ -3,128 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AERO-VIEW | Pilot App v1.9</title>
+    <title>AERO_PILOT_REMOTE</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
     <style>
-        body { background: radial-gradient(circle at 50% 0%, #1e293b, #000); min-height: 100vh; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .btn-active { background: #22d3ee !important; color: #000 !important; font-weight: 900; }
-        .neon-text { text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .glow-cyan { text-shadow: 0 0 20px rgba(0, 240, 255, 0.6); }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body class="p-6">
+<body class="flex flex-col items-center justify-between h-screen p-8">
 
-    <div class="max-w-md mx-auto">
-        <header class="flex justify-between items-end mb-8">
-            <div>
-                <h1 class="text-3xl font-black italic tracking-tighter uppercase leading-none">AERO<span class="text-cyan-400">VIEW</span></h1>
-                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">CORE_COMMAND_v1.9</p>
-            </div>
-            <div id="gps-status" class="text-[10px] font-bold text-red-500 uppercase">GPS: OFFLINE</div>
-        </header>
+    <div class="text-center mt-12">
+        <h1 class="text-cyan-400 text-[10px] tracking-[0.5em] uppercase mb-2">Satellite_Uplink_Active</h1>
+        <div id="speed-display" class="text-8xl font-black glow-cyan">00</div>
+        <p class="text-cyan-400/40 text-xs tracking-widest mt-2 uppercase">Current_MPH</p>
+    </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="glass p-5 rounded-[2rem] text-center">
-                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Velocity</p>
-                <p id="live-speed" class="text-4xl font-black text-cyan-400 neon-text">0</p>
-                <p class="text-[8px] font-bold text-gray-500 uppercase">MPH</p>
-            </div>
-            <div class="glass p-5 rounded-[2rem] text-center">
-                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Steering</p>
-                <p id="live-tilt" class="text-4xl font-black text-white italic">0°</p>
-                <p class="text-[8px] font-bold text-gray-500 uppercase">Input</p>
-            </div>
+    <div class="w-full space-y-6 mb-12">
+        <button onclick="startMission()" id="btn-start" class="w-full py-6 rounded-3xl bg-cyan-500 text-black font-black uppercase tracking-widest text-sm shadow-[0_0_30px_rgba(6,182,212,0.4)]">
+            Initialize_Aero_Link
+        </button>
+        
+        <div class="glass p-6 rounded-[2rem] text-center">
+            <div id="status-text" class="text-[9px] text-white/30 uppercase tracking-[0.2em]">Standing_By...</div>
         </div>
-
-        <div class="space-y-4 mb-8">
-            <button id="init-btn" class="w-full py-5 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400 active:scale-95 transition-all">
-                INITIALIZE SENSOR ARRAY
-            </button>
-            
-            <div class="grid grid-cols-2 gap-3">
-                <button id="color-cyan" class="py-4 glass rounded-2xl border-b-2 border-cyan-500 text-[9px] font-black uppercase tracking-widest">Cyan Sig</button>
-                <button id="color-pink" class="py-4 glass rounded-2xl border-b-2 border-pink-500 text-[9px] font-black uppercase tracking-widest">Pink Sig</button>
-            </div>
-        </div>
-
-        <div class="glass p-4 rounded-2xl font-mono text-[9px] text-gray-500">
-            <div id="console-out" class="space-y-1 h-24 overflow-y-auto">
-                <p>> Booting System v1.9...</p>
-                <p>> Check bottom build number...</p>
-            </div>
-        </div>
-
-        <p class="text-center text-[8px] text-gray-700 mt-6 tracking-widest uppercase">Build: 2026.03.25.1845</p>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBJgr9zdA4j1U-50b9TRfsoqrE3pIxmee4",
             authDomain: "aero-view-alpha.firebaseapp.com",
             projectId: "aero-view-alpha",
-            storageBucket: "aero-view-alpha.firebasestorage.app",
-            messagingSenderId: "239183849355",
-            appId: "1:239183849355:web:5d19770237b2565148718e",
-            measurementId: "G-E3CNWW9JJB"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const hudRef = doc(db, "settings", "hud_config");
 
-        const log = (msg) => {
-            const out = document.getElementById('console-out');
-            out.innerHTML += `<p>> ${msg}</p>`;
-            out.scrollTop = out.scrollHeight;
-        };
-
-        // Ensure everything is ready
-        window.onload = () => {
-            log("Core Ready. Tap Initialize.");
-
-            const initBtn = document.getElementById('init-btn');
-
-            document.getElementById('color-cyan').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#00FFFF' }));
-            document.getElementById('color-pink').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#FF007F' }));
-
-            initBtn.addEventListener('click', async () => {
-                // Immediate visual feedback
-                initBtn.classList.add('btn-active');
-                initBtn.innerText = "CONNECTING...";
-                log("Interaction Registered.");
-                
-                if (navigator.vibrate) navigator.vibrate(60);
-
-                // Permissions Check
-                try {
-                    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                        const permission = await DeviceOrientationEvent.requestPermission();
-                        log("Permission Result: " + permission);
-                    }
-                } catch (e) { log("Permission Bypass Used."); }
-
-                // Start Sensors
-                window.addEventListener('deviceorientation', (event) => {
-                    const tilt = Math.round(event.gamma || 0);
-                    document.getElementById('live-tilt').innerText = `${tilt}°`;
-                    if (Date.now() % 5 === 0) updateDoc(doc(db, "settings", "hud_config"), { steering_tilt: tilt });
-                });
-
+        window.startMission = () => {
+            document.getElementById('btn-start').innerHTML = "Mission_Live";
+            document.getElementById('btn-start').classList.add('opacity-50');
+            
+            // 1. GET GPS SPEED
+            if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition((position) => {
-                    document.getElementById('gps-status').innerText = "GPS: ACTIVE";
-                    document.getElementById('gps-status').className = "text-[10px] font-bold text-cyan-400 uppercase";
-                    const speed = Math.round((position.coords.speed || 0) * 2.23694);
-                    document.getElementById('live-speed').innerText = speed;
-                    updateDoc(doc(db, "settings", "hud_config"), { gps_speed: speed });
-                }, (err) => log("GPS Error: " + err.code), { enableHighAccuracy: true });
+                    // Convert meters per second to MPH (mps * 2.237)
+                    let mps = position.coords.speed || 0;
+                    let mph = Math.round(mps * 2.237);
+                    
+                    document.getElementById('speed-display').innerText = mph.toString().padStart(2, '0');
+                    updateDoc(hudRef, { gps_speed: mph });
+                }, (err) => console.error(err), { enableHighAccuracy: true });
+            }
 
-                initBtn.innerText = "SYSTEMS ONLINE";
-                initBtn.className = "w-full py-5 glass border-green-500/50 rounded-2xl text-xs font-black tracking-[0.3em] text-green-500 pointer-events-none opacity-60";
-                log("Uplink Established.");
+            // 2. GET STEERING TILT
+            window.addEventListener("deviceorientation", (event) => {
+                let tilt = Math.round(event.gamma); // Left/Right tilt
+                updateDoc(hudRef, { steering_tilt: tilt });
             });
+
+            document.getElementById('status-text').innerText = "Streaming_Telemetry_to_Cloud";
         };
     </script>
 </body>
