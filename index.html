@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AERO-VIEW | Pilot App v1.8</title>
+    <title>AERO-VIEW | Pilot App v1.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
     <style>
         body { background: radial-gradient(circle at 50% 0%, #1e293b, #000); min-height: 100vh; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .btn-active { background: #22d3ee !important; color: #000 !important; font-weight: 900; }
         .neon-text { text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
-        .active-glow { box-shadow: 0 0 20px rgba(34, 211, 238, 0.3); border-color: rgba(34, 211, 238, 0.6); }
     </style>
 </head>
 <body class="p-6">
@@ -19,54 +19,43 @@
         <header class="flex justify-between items-end mb-8">
             <div>
                 <h1 class="text-3xl font-black italic tracking-tighter uppercase leading-none">AERO<span class="text-cyan-400">VIEW</span></h1>
-                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">COMMANDER_v1.8</p>
+                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">CORE_COMMAND_v1.9</p>
             </div>
-            <div id="gps-status" class="text-[10px] font-bold text-red-500 uppercase tracking-tighter">GPS: OFFLINE</div>
+            <div id="gps-status" class="text-[10px] font-bold text-red-500 uppercase">GPS: OFFLINE</div>
         </header>
 
         <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="glass p-5 rounded-[2rem] text-center border-t border-white/10">
+            <div class="glass p-5 rounded-[2rem] text-center">
                 <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Velocity</p>
                 <p id="live-speed" class="text-4xl font-black text-cyan-400 neon-text">0</p>
-                <p class="text-[8px] font-bold text-gray-500 uppercase">Miles Per Hour</p>
+                <p class="text-[8px] font-bold text-gray-500 uppercase">MPH</p>
             </div>
-            <div class="glass p-5 rounded-[2rem] text-center border-t border-white/10">
+            <div class="glass p-5 rounded-[2rem] text-center">
                 <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Steering</p>
                 <p id="live-tilt" class="text-4xl font-black text-white italic">0°</p>
-                <p class="text-[8px] font-bold text-gray-500 uppercase">Input Angle</p>
+                <p class="text-[8px] font-bold text-gray-500 uppercase">Input</p>
             </div>
         </div>
 
         <div class="space-y-4 mb-8">
-            <button id="init-btn" class="w-full py-4 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400 active:scale-95 transition-all">
+            <button id="init-btn" class="w-full py-5 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400 active:scale-95 transition-all">
                 INITIALIZE SENSOR ARRAY
             </button>
             
             <div class="grid grid-cols-2 gap-3">
-                <button id="color-cyan" class="py-4 glass rounded-2xl border-b-2 border-cyan-500 text-[9px] font-black uppercase tracking-widest hover:bg-cyan-500/10">Cyan Signature</button>
-                <button id="color-pink" class="py-4 glass rounded-2xl border-b-2 border-pink-500 text-[9px] font-black uppercase tracking-widest hover:bg-pink-500/10">Pink Signature</button>
-            </div>
-
-            <div class="glass p-5 rounded-[2rem] flex justify-between items-center">
-                <div>
-                    <h2 class="text-xs font-black uppercase tracking-tight">Night Specter</h2>
-                    <p class="text-[9px] text-gray-500 uppercase mt-1">Enhance Hazard Contrast</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="night-toggle" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-white/5 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-cyan-500 after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white/40 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                </label>
+                <button id="color-cyan" class="py-4 glass rounded-2xl border-b-2 border-cyan-500 text-[9px] font-black uppercase tracking-widest">Cyan Sig</button>
+                <button id="color-pink" class="py-4 glass rounded-2xl border-b-2 border-pink-500 text-[9px] font-black uppercase tracking-widest">Pink Sig</button>
             </div>
         </div>
 
         <div class="glass p-4 rounded-2xl font-mono text-[9px] text-gray-500">
-            <div id="console-out" class="space-y-1 h-20 overflow-y-auto">
-                <p>> System Readiness: 100%</p>
-                <p>> Awaiting Uplink...</p>
+            <div id="console-out" class="space-y-1 h-24 overflow-y-auto">
+                <p>> Booting System v1.9...</p>
+                <p>> Check bottom build number...</p>
             </div>
         </div>
 
-        <p class="text-center text-[8px] text-gray-700 mt-6 tracking-widest uppercase">Build: 2026.03.25.1800</p>
+        <p class="text-center text-[8px] text-gray-700 mt-6 tracking-widest uppercase">Build: 2026.03.25.1845</p>
     </div>
 
     <script type="module">
@@ -79,4 +68,64 @@
             projectId: "aero-view-alpha",
             storageBucket: "aero-view-alpha.firebasestorage.app",
             messagingSenderId: "239183849355",
-            appId: "1:239183849355:web:5d19770237b256
+            appId: "1:239183849355:web:5d19770237b2565148718e",
+            measurementId: "G-E3CNWW9JJB"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const log = (msg) => {
+            const out = document.getElementById('console-out');
+            out.innerHTML += `<p>> ${msg}</p>`;
+            out.scrollTop = out.scrollHeight;
+        };
+
+        // Ensure everything is ready
+        window.onload = () => {
+            log("Core Ready. Tap Initialize.");
+
+            const initBtn = document.getElementById('init-btn');
+
+            document.getElementById('color-cyan').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#00FFFF' }));
+            document.getElementById('color-pink').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#FF007F' }));
+
+            initBtn.addEventListener('click', async () => {
+                // Immediate visual feedback
+                initBtn.classList.add('btn-active');
+                initBtn.innerText = "CONNECTING...";
+                log("Interaction Registered.");
+                
+                if (navigator.vibrate) navigator.vibrate(60);
+
+                // Permissions Check
+                try {
+                    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                        const permission = await DeviceOrientationEvent.requestPermission();
+                        log("Permission Result: " + permission);
+                    }
+                } catch (e) { log("Permission Bypass Used."); }
+
+                // Start Sensors
+                window.addEventListener('deviceorientation', (event) => {
+                    const tilt = Math.round(event.gamma || 0);
+                    document.getElementById('live-tilt').innerText = `${tilt}°`;
+                    if (Date.now() % 5 === 0) updateDoc(doc(db, "settings", "hud_config"), { steering_tilt: tilt });
+                });
+
+                navigator.geolocation.watchPosition((position) => {
+                    document.getElementById('gps-status').innerText = "GPS: ACTIVE";
+                    document.getElementById('gps-status').className = "text-[10px] font-bold text-cyan-400 uppercase";
+                    const speed = Math.round((position.coords.speed || 0) * 2.23694);
+                    document.getElementById('live-speed').innerText = speed;
+                    updateDoc(doc(db, "settings", "hud_config"), { gps_speed: speed });
+                }, (err) => log("GPS Error: " + err.code), { enableHighAccuracy: true });
+
+                initBtn.innerText = "SYSTEMS ONLINE";
+                initBtn.className = "w-full py-5 glass border-green-500/50 rounded-2xl text-xs font-black tracking-[0.3em] text-green-500 pointer-events-none opacity-60";
+                log("Uplink Established.");
+            });
+        };
+    </script>
+</body>
+</html>
