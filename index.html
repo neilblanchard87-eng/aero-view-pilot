@@ -64,4 +64,63 @@
             projectId: "aero-view-alpha",
             storageBucket: "aero-view-alpha.firebasestorage.app",
             messagingSenderId: "239183849355",
-            appId: "1:23918384935
+            appId: "1:239183849355:web:5d19770237b2565148718e",
+            measurementId: "G-E3CNWW9JJB"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const log = (msg) => {
+            const out = document.getElementById('console-out');
+            out.innerHTML += `<p>> ${msg}</p>`;
+            out.scrollTop = out.scrollHeight;
+        };
+
+        document.getElementById('color-cyan').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#00FFFF' }));
+        document.getElementById('color-pink').addEventListener('click', () => updateDoc(doc(db, "settings", "hud_config"), { color: '#FF007F' }));
+
+        document.getElementById('init-btn').addEventListener('click', async () => {
+            log("Initializing Dynamic Sensors...");
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            // Request Motion/Orientation Permissions
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                const response = await DeviceOrientationEvent.requestPermission();
+                if (response !== 'granted') { log("Orientation Denied."); return; }
+            }
+
+            // A. TILT (STEERING) TRACKING
+            window.addEventListener('deviceorientation', (event) => {
+                const tilt = Math.round(event.gamma); // Roll (Left/Right tilt)
+                document.getElementById('live-tilt').innerText = `${tilt}°`;
+                
+                // Throttle cloud updates
+                if (Date.now() % 4 === 0) {
+                    updateDoc(doc(db, "settings", "hud_config"), { steering_tilt: tilt });
+                }
+            });
+
+            // B. G-FORCE TRACKING
+            window.addEventListener('devicemotion', (event) => {
+                const gx = event.accelerationIncludingGravity.x || 0;
+                const gy = event.accelerationIncludingGravity.y || 0;
+                if (Date.now() % 6 === 0) {
+                    updateDoc(doc(db, "settings", "hud_config"), { g_x: gx, g_y: gy });
+                }
+            });
+
+            // C. GPS TRACKING
+            navigator.geolocation.watchPosition(async (position) => {
+                document.getElementById('gps-status').innerText = "GPS: ACTIVE";
+                const speedMPH = Math.round((position.coords.speed || 0) * 2.23694);
+                document.getElementById('live-speed').innerText = speedMPH;
+                updateDoc(doc(db, "settings", "hud_config"), { gps_speed: speedMPH });
+            }, null, { enableHighAccuracy: true });
+
+            document.getElementById('init-btn').innerText = "ACTIVE_MISSION";
+            document.getElementById('init-btn').className = "w-full py-5 glass border-green-500/30 rounded-2xl text-xs font-black tracking-[0.3em] text-green-500 pointer-events-none opacity-50";
+        });
+    </script>
+</body>
+</html>
