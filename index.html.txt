@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AERO-VIEW | Pilot Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background: radial-gradient(circle at top right, #0f172a, #000); 
+            min-height: 100vh; 
+            color: white; 
+            font-family: 'Inter', sans-serif;
+        }
+        .glass { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+        .neo-button {
+            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .neo-button:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-md mx-auto">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-black italic tracking-tighter uppercase">Aero-View <span class="text-cyan-400">OS</span></h1>
+                <p class="text-[10px] font-mono text-gray-500 tracking-[0.2em]">MISSION CONTROL v1.0</p>
+            </div>
+            <div class="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+        </header>
+
+        <div class="flex space-x-2 mb-6 p-1 glass rounded-xl">
+            <button onclick="switchTab('controls')" id="btn-controls" class="flex-1 py-2 rounded-lg text-sm font-bold bg-cyan-500 text-black">CONTROLS</button>
+            <button onclick="switchTab('logs')" id="btn-logs" class="flex-1 py-2 rounded-lg text-sm font-bold text-gray-400">LOGS</button>
+        </div>
+
+        <div id="tab-controls" class="space-y-6">
+            <div class="glass p-6 rounded-3xl">
+                <h2 class="text-xs font-mono text-gray-500 mb-4 uppercase tracking-widest">HUD Theme Color</h2>
+                <div class="grid grid-cols-4 gap-4">
+                    <button onclick="updateColor('#00FFFF')" class="h-12 w-full rounded-xl bg-[#00FFFF] border-2 border-white/20"></button>
+                    <button onclick="updateColor('#FF0055')" class="h-12 w-full rounded-xl bg-[#FF0055] border-2 border-white/20"></button>
+                    <button onclick="updateColor('#00FF66')" class="h-12 w-full rounded-xl bg-[#00FF66] border-2 border-white/20"></button>
+                    <button onclick="updateColor('#FFAA00')" class="h-12 w-full rounded-xl bg-[#FFAA00] border-2 border-white/20"></button>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl flex justify-between items-center">
+                <div>
+                    <h2 class="font-bold text-lg">AI Hazard Detection</h2>
+                    <p class="text-xs text-gray-500">Real-time object tracking</p>
+                </div>
+                <input type="checkbox" id="hazard-toggle" onchange="toggleHazards(this.checked)" checked class="w-12 h-6 bg-gray-700 rounded-full appearance-none checked:bg-cyan-500 transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:w-4 after:h-4 after:rounded-full after:transition-all checked:after:translate-x-6">
+            </div>
+
+            <div class="glass p-6 rounded-3xl text-center">
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">System Status</p>
+                <p class="text-3xl font-black text-white">OPTIMAL</p>
+            </div>
+        </div>
+
+        <div id="tab-logs" class="hidden space-y-3">
+            <h2 class="text-xs font-mono text-gray-500 mb-4 uppercase tracking-widest">Recent Black Box Events</h2>
+            <div id="log-container" class="space-y-2">
+                <p class="text-center text-gray-600 py-10 italic">Awaiting Telemetry...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, updateDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Your specific config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJgr9zdA4j1U-50b9TRfsoqrE3pIxmee4",
+            authDomain: "aero-view-alpha.firebaseapp.com",
+            projectId: "aero-view-alpha",
+            storageBucket: "aero-view-alpha.firebasestorage.app",
+            messagingSenderId: "239183849355",
+            appId: "1:239183849355:web:5d19770237b2565148718e",
+            measurementId: "G-E3CNWW9JJB"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- EXPOSE FUNCTIONS TO WINDOW ---
+        window.updateColor = async (hex) => {
+            const docRef = doc(db, "settings", "hud_config");
+            await updateDoc(docRef, { color: hex });
+        };
+
+        window.toggleHazards = async (val) => {
+            const docRef = doc(db, "settings", "hud_config");
+            await updateDoc(docRef, { show_hazards: val });
+        };
+
+        window.switchTab = (tab) => {
+            document.getElementById('tab-controls').classList.toggle('hidden', tab !== 'controls');
+            document.getElementById('tab-logs').classList.toggle('hidden', tab !== 'logs');
+            
+            document.getElementById('btn-controls').className = tab === 'controls' ? 'flex-1 py-2 rounded-lg text-sm font-bold bg-cyan-500 text-black' : 'flex-1 py-2 rounded-lg text-sm font-bold text-gray-400';
+            document.getElementById('btn-logs').className = tab === 'logs' ? 'flex-1 py-2 rounded-lg text-sm font-bold bg-cyan-500 text-black' : 'flex-1 py-2 rounded-lg text-sm font-bold text-gray-400';
+        };
+
+        // --- LISTEN FOR LOGS ---
+        const logQuery = query(collection(db, "mission_logs"), orderBy("timestamp", "desc"), limit(8));
+        onSnapshot(logQuery, (snapshot) => {
+            const container = document.getElementById('log-container');
+            container.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const time = data.timestamp?.toDate().toLocaleTimeString() || "NOW";
+                const isDanger = data.vehicle_speed > 0; // Just an example logic
+                
+                container.innerHTML += `
+                    <div class="glass p-4 rounded-2xl flex justify-between items-center border-l-4 ${data.event_type === 'car' ? 'border-cyan-400' : 'border-red-500'}">
+                        <div>
+                            <p class="text-[10px] text-gray-500">${time}</p>
+                            <p class="font-bold text-white uppercase">${data.event_type} DETECTED</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">CONFIDENCE</p>
+                            <p class="text-lg font-mono text-cyan-400">${(data.ai_confidence * 100).toFixed(0)}%</p>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    </script>
+</body>
+</html>
