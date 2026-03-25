@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AERO-VIEW | Pilot App v1.3</title>
+    <title>AERO-VIEW | Pilot App v1.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
@@ -19,7 +19,7 @@
         <header class="flex justify-between items-end mb-10">
             <div>
                 <h1 class="text-3xl font-black italic tracking-tighter uppercase">AERO<span class="text-cyan-400">VIEW</span></h1>
-                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">SENSORY_LINK_v1.3</p>
+                <p class="text-[9px] font-mono text-cyan-400/50 tracking-[0.3em] mt-1">SENSORY_LINK_v1.4</p>
             </div>
             <div id="gps-status" class="text-[10px] font-bold text-red-500 uppercase">GPS: OFFLINE</div>
         </header>
@@ -38,20 +38,20 @@
         </div>
 
         <div class="space-y-4 mb-10">
-            <button onclick="requestTelemetry()" id="init-btn" class="w-full py-5 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400 active:scale-95 transition-all">
+            <button id="init-btn" class="w-full py-5 glass border-cyan-400/30 rounded-2xl text-xs font-black tracking-[0.3em] text-cyan-400 active:scale-95 transition-all">
                 INITIALIZE MISSION LINK
             </button>
             
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="updateColor('#00FFFF')" class="py-4 glass rounded-2xl border-b-2 border-cyan-500 text-[10px] font-black">CYAN MODE</button>
-                <button onclick="updateColor('#FF007F')" class="py-4 glass rounded-2xl border-b-2 border-pink-500 text-[10px] font-black">PINK MODE</button>
+                <button id="color-cyan" class="py-4 glass rounded-2xl border-b-2 border-cyan-500 text-[10px] font-black">CYAN MODE</button>
+                <button id="color-pink" class="py-4 glass rounded-2xl border-b-2 border-pink-500 text-[10px] font-black">PINK MODE</button>
             </div>
         </div>
 
         <div class="glass p-4 rounded-2xl font-mono text-[10px] text-gray-500">
-            <p class="text-cyan-400 mb-2 uppercase tracking-widest border-b border-white/5 pb-1">System Console</p>
+            <p class="text-cyan-400 mb-2 uppercase tracking-widest border-b border-white/5 pb-1 text-[8px]">Real-time Telemetry Console</p>
             <div id="console-out" class="space-y-1 h-20 overflow-y-auto">
-                <p>> System Idle. Awaiting initialization...</p>
+                <p>> System Standby...</p>
             </div>
         </div>
     </div>
@@ -79,62 +79,61 @@
             out.scrollTop = out.scrollHeight;
         };
 
-        window.updateColor = async (hex) => {
-            await updateDoc(doc(db, "settings", "hud_config"), { color: hex });
-            log(`HUD Color Updated: ${hex}`);
-        };
+        // --- ATTACH EVENTS DIRECTLY IN THE SCRIPT (The Module Way) ---
 
-        window.requestTelemetry = () => {
+        document.getElementById('color-cyan').addEventListener('click', async () => {
+            await updateDoc(doc(db, "settings", "hud_config"), { color: '#00FFFF' });
+            log("Signal: Theme -> Cyan");
+        });
+
+        document.getElementById('color-pink').addEventListener('click', async () => {
+            await updateDoc(doc(db, "settings", "hud_config"), { color: '#FF007F' });
+            log("Signal: Theme -> Pink");
+        });
+
+        document.getElementById('init-btn').addEventListener('click', () => {
+            log("Link Command Received.");
+            
+            // Haptic Feedback (Android/Chrome)
+            if (navigator.vibrate) navigator.vibrate(50);
+
             if (!("geolocation" in navigator)) {
-                log("ERROR: Geolocation not supported by this browser.");
+                log("Fatal: GPS Hardware Not Detected.");
                 return;
             }
 
-            log("Requesting GPS Permissions...");
+            log("Requesting Sat-Link...");
             const statusEl = document.getElementById('gps-status');
-            
-            // High-Accuracy Options for 2026 Mobile OS
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            };
 
             navigator.geolocation.watchPosition(async (position) => {
+                log("Sat-Link: SECURED");
                 statusEl.innerText = "GPS: ACTIVE";
                 statusEl.className = "text-[10px] font-bold text-cyan-400 uppercase";
                 
-                // Convert m/s to MPH. Note: speed is often null if stationary.
-                const rawSpeed = position.coords.speed || 0;
-                const speedMPH = Math.round(rawSpeed * 2.23694);
+                const speedMPH = Math.round((position.coords.speed || 0) * 2.23694);
                 const heading = position.coords.heading || 0;
 
                 document.getElementById('live-speed').innerText = speedMPH;
                 document.getElementById('live-heading').innerText = `${Math.round(heading)}°`;
                 
-                // Determine Cardinal Direction
                 const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-                const cardinal = directions[Math.round(heading / 45) % 8];
-                document.getElementById('cardinal-dir').innerText = rawSpeed > 0.5 ? cardinal : "Stationary";
+                document.getElementById('cardinal-dir').innerText = directions[Math.round(heading / 45) % 8];
 
-                // Sync to Cloud
                 try {
                     await updateDoc(doc(db, "settings", "hud_config"), { 
                         gps_speed: speedMPH,
                         heading: heading
                     });
-                } catch (e) { log("Firebase Sync Failed."); }
+                } catch (e) { log("Cloud Error: Sync Interrupted."); }
 
             }, (error) => {
-                let msg = "Unknown Error";
-                if(error.code == 1) msg = "PERMISSION DENIED";
-                if(error.code == 2) msg = "POSITION UNAVAILABLE (Searching...)";
-                if(error.code == 3) msg = "TIMEOUT (Poor Signal)";
-                
-                statusEl.innerText = `GPS: ${msg}`;
-                statusEl.className = "text-[10px] font-bold text-red-500 uppercase";
-                log(`GPS Error: ${msg}`);
-            }, options);
+                log(`GPS Error Code: ${error.code}`);
+                statusEl.innerText = "GPS: ERROR " + error.code;
+            }, { enableHighAccuracy: true, timeout: 5000 });
 
-            document.getElementById('init-btn').innerText = "LINK ESTABLISHED";
-            document.getElementById('init-btn').className = "w-full py-5 glass border-green-500/30 rounded-2xl text-xs font
+            document.getElementById('init-btn').innerText = "SYSTEMS LINKED";
+            document.getElementById('init-btn').className = "w-full py-5 glass border-green-500/30 rounded-2xl text-xs font-black tracking-[0.3em] text-green-500 pointer-events-none";
+        });
+    </script>
+</body>
+</html>
