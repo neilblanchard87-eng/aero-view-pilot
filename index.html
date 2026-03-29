@@ -81,4 +81,97 @@
             document.getElementById('current-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }, 1000);
 
-        // 2. MAIN TELE
+        // 2. MAIN TELEMETRY LOOP
+        window.toggleTrip = () => {
+            isDriving = !isDriving;
+            const btn = document.getElementById('trip-btn');
+            btn.innerText = isDriving ? "End Trip" : "Start Trip";
+            btn.style.backgroundColor = isDriving ? "#ff0055" : "#06b6d4";
+            document.getElementById('status-msg').innerText = isDriving ? "Trip_In_Progress" : "Trip_Saved";
+            
+            if (isDriving) {
+                totalDist = 0;
+                smoothness = 100;
+                startTracking();
+            } else {
+                saveTripToHistory();
+            }
+        };
+
+        function startTracking() {
+            navigator.geolocation.watchPosition((pos) => {
+                document.getElementById('gps-indicator').style.backgroundColor = '#22c55e';
+                
+                let mph = Math.round((pos.coords.speed || 0) * 2.237);
+                document.getElementById('speed').innerText = mph;
+
+                // Automatic Parking Detection
+                if (mph === 0 && isDriving) {
+                    updateDoc(hudRef, { last_parked: { lat: pos.coords.latitude, lng: pos.coords.longitude, time: new Date().toISOString() } });
+                }
+
+                // Distance Calculation
+                if (lastPos && mph > 1) {
+                    const d = getDistance(lastPos.lat, lastPos.lng, pos.coords.latitude, pos.coords.longitude);
+                    totalDist += d;
+                    document.getElementById('trip-dist').innerText = totalDist.toFixed(1);
+                }
+                lastPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+                // Sync to Cloud
+                updateDoc(hudRef, { gps_speed: mph, steering_tilt: 0 });
+            }, null, { enableHighAccuracy: true });
+        }
+
+        // 3. SMOOTHNESS & G-FORCE
+        window.addEventListener("devicemotion", (e) => {
+            const x = e.accelerationIncludingGravity.x || 0;
+            const y = e.accelerationIncludingGravity.y || 0;
+            
+            // Move the G-Ball visually
+            const ball = document.getElementById('g-ball');
+            ball.style.transform = `translate(${-x * 10}px, ${y * 10}px)`;
+
+            // Smoothness Logic: Penalty for high G-moves
+            const combinedG = Math.abs(x) + Math.abs(y);
+            if (combinedG > 15) {
+                smoothness = Math.max(0, smoothness - 1);
+                document.getElementById('smooth-score').innerText = `${smoothness}%`;
+                document.getElementById('smooth-score').style.color = smoothness < 70 ? '#ff0055' : '#22c55e';
+                
+                // Haptic feedback for harsh moves
+                if ("vibrate" in navigator) navigator.vibrate(50);
+            }
+        });
+
+        // 4. UTILS
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // Miles
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        window.markLocation = () => {
+            if (lastPos) {
+                addDoc(collection(db, "road_notes"), {
+                    coords: lastPos,
+                    timestamp: new Date().toISOString(),
+                    type: "User_Marked"
+                });
+                if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+                alert("Location Pinned to Cloud");
+            }
+        };
+
+        async function saveTripToHistory() {
+            await addDoc(collection(db, "trip_history"), {
+                distance: totalDist.toFixed(2),
+                smoothness: smoothness,
+                date: new Date().toISOString()
+            });
+        }
+    </script>
+</body>
+</html>
