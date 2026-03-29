@@ -3,84 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aero-Pilot Dashboard</title>
+    <title>Aero-Pilot OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
-        .glow-cyan { text-shadow: 0 0 25px rgba(0, 240, 255, 0.5); }
-        .glass-panel { background: rgba(0, 240, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(0, 240, 255, 0.1); }
-        
-        /* Animated Grid Floor for "Visual Activity" */
-        .grid-bg {
-            background-image: linear-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(0, 240, 255, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
-            transform: perspective(500px) rotateX(60deg);
-            position: absolute; bottom: -100px; width: 200%; height: 100%;
-            left: -50%; z-index: 0; opacity: 0.3;
-        }
+        .glow-cyan { text-shadow: 0 0 25px rgba(0, 240, 255, 0.4); }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .tab-active { color: #00F0FF; border-top: 2px solid #00F0FF; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="h-screen flex flex-col justify-between p-6 relative overflow-hidden">
+<body class="h-screen flex flex-col justify-between relative">
 
-    <div class="grid-bg"></div>
-
-    <div class="relative z-10 flex justify-between items-start">
-        <div class="space-y-1">
-            <div class="flex items-center gap-2">
-                <div id="gps-dot" class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                <span class="text-[9px] font-black tracking-[0.3em] opacity-60 uppercase">Uplink_Status</span>
-            </div>
-            <div class="text-[10px] font-mono text-cyan-400/40" id="coords">WAITING_FOR_GPS...</div>
+    <div class="p-6 flex justify-between items-center z-50 bg-black/50 backdrop-blur-md">
+        <div class="flex flex-col">
+            <span class="text-[9px] font-black tracking-[0.3em] text-cyan-400/50 uppercase">System_Active</span>
+            <span id="current-city" class="text-xs font-bold tracking-tight">Locating_Satellites...</span>
         </div>
-        <div class="text-right">
-            <div class="text-[9px] font-black tracking-[0.3em] opacity-60 uppercase">Local_Time</div>
-            <div class="text-xs font-bold text-white" id="clock">00:00:00</div>
+        <div class="glass-panel px-3 py-1 rounded-full flex items-center gap-2">
+            <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+            <span class="text-[9px] font-black tracking-widest uppercase">Uplink</span>
         </div>
     </div>
 
-    <div class="relative z-10 flex flex-col items-center py-10">
-        <div class="relative w-64 h-64 flex items-center justify-center">
-            <svg class="absolute inset-0 w-full h-full rotate-[-90deg]">
-                <circle cx="128" cy="128" r="120" stroke="currentColor" stroke-width="2" fill="transparent" class="text-white/5" />
-                <circle id="speed-ring" cx="128" cy="128" r="120" stroke="currentColor" stroke-width="4" fill="transparent" 
-                        class="text-cyan-400 transition-all duration-300" stroke-dasharray="753" stroke-dashoffset="753" />
-            </svg>
-            
-            <div class="text-center">
-                <div id="speed-val" class="text-[100px] font-black leading-none glow-cyan italic">00</div>
-                <div class="text-[10px] font-black tracking-[0.5em] text-cyan-400/60 uppercase mt-2">Velocity_MPH</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="relative z-10 grid grid-cols-2 gap-4 mb-4">
-        <div class="glass-panel p-4 rounded-3xl">
-            <span class="text-[9px] font-black text-cyan-400/40 tracking-widest uppercase">AI_Vision</span>
-            <div class="flex items-end gap-2 mt-1">
-                <span id="target-count" class="text-2xl font-bold">0</span>
-                <span class="text-[9px] mb-1 opacity-40">TARGETS_LOCKED</span>
-            </div>
-        </div>
+    <main class="flex-1 overflow-y-auto px-6 pb-24">
         
-        <div class="glass-panel p-4 rounded-3xl">
-            <span class="text-[9px] font-black text-cyan-400/40 tracking-widest uppercase">G_Smoothness</span>
-            <div class="flex items-end gap-2 mt-1">
-                <span id="smooth-val" class="text-2xl font-bold text-green-400">100%</span>
+        <section id="page-drive" class="space-y-6 pt-4">
+            <div class="flex flex-col items-center justify-center py-10 relative">
+                <div class="text-[120px] font-black italic leading-none glow-cyan" id="speed-val">00</div>
+                <div class="text-[10px] font-black tracking-[0.5em] text-cyan-400/40 uppercase">Velocity_MPH</div>
             </div>
-        </div>
-    </div>
 
-    <div class="relative z-10">
-        <button onclick="initApp()" id="main-btn" class="w-full py-6 rounded-[2rem] bg-cyan-500 text-black font-black uppercase tracking-widest text-xs shadow-[0_10px_40px_rgba(6,182,212,0.4)] active:scale-95 transition-all">
-            Initialize_System
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass-panel p-5 rounded-[2rem]">
+                    <span class="text-[9px] font-black text-white/20 tracking-widest uppercase">G_Smoothness</span>
+                    <div id="smooth-val" class="text-2xl font-bold mt-1">100%</div>
+                </div>
+                <div class="glass-panel p-5 rounded-[2rem]">
+                    <span class="text-[9px] font-black text-white/20 tracking-widest uppercase">Trip_Dist</span>
+                    <div class="text-2xl font-bold mt-1"><span id="trip-dist">0.0</span> <span class="text-xs opacity-20">MI</span></div>
+                </div>
+            </div>
+
+            <button onclick="markHazard()" class="w-full glass-panel py-8 rounded-[2.5rem] flex flex-col items-center justify-center active:scale-95 transition-all">
+                <span class="text-cyan-400 font-black tracking-[0.4em] text-[10px] uppercase italic">Quick_Mark_Hazard</span>
+            </button>
+        </section>
+
+        <section id="page-wallet" class="hidden space-y-6 pt-6">
+            <h2 class="text-2xl font-black italic tracking-tighter">Digital_Glovebox</h2>
+            <div class="space-y-4">
+                <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-cyan-500">
+                    <span class="text-[9px] font-black text-cyan-400 tracking-widest uppercase">Insurance_Policy</span>
+                    <div class="mt-2 text-sm font-bold">Policy #AERO-9920-X</div>
+                    <div class="text-[10px] opacity-40">Expires: 12/2026</div>
+                </div>
+                <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-white/20">
+                    <span class="text-[9px] font-black text-white/40 tracking-widest uppercase">Registration</span>
+                    <div class="mt-2 text-sm font-bold">Plate: AERO_VIEW</div>
+                    <div class="text-[10px] opacity-40">CA_Registered_2026</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-fuel" class="hidden space-y-6 pt-6 text-center">
+            <h2 class="text-2xl font-black italic tracking-tighter">Fuel_Log</h2>
+            <div class="glass-panel p-10 rounded-[3rem] border-2 border-dashed border-white/10">
+                <p class="text-xs opacity-40 mb-6 uppercase tracking-widest">Log_Current_Fill_Up</p>
+                <div class="flex justify-center gap-4 mb-8">
+                    <button class="w-16 h-16 rounded-full glass-panel flex items-center justify-center font-bold">$40</button>
+                    <button class="w-16 h-16 rounded-full glass-panel flex items-center justify-center font-bold">$60</button>
+                    <button class="w-16 h-16 rounded-full glass-panel flex items-center justify-center font-bold">$80</button>
+                </div>
+                <button class="w-full bg-white text-black py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest">Confirm_Transaction</button>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="absolute bottom-0 w-full h-20 glass-panel border-t border-white/10 flex justify-around items-center px-6 pb-2">
+        <button onclick="showPage('drive')" class="flex flex-col items-center gap-1 opacity-40 transition-all nav-btn" id="nav-drive">
+            <span class="text-[9px] font-black uppercase tracking-tighter">Drive</span>
         </button>
-    </div>
+        <button onclick="showPage('wallet')" class="flex flex-col items-center gap-1 opacity-40 transition-all nav-btn" id="nav-wallet">
+            <span class="text-[9px] font-black uppercase tracking-tighter">Wallet</span>
+        </button>
+        <button onclick="showPage('fuel')" class="flex flex-col items-center gap-1 opacity-40 transition-all nav-btn" id="nav-fuel">
+            <span class="text-[9px] font-black uppercase tracking-tighter">Fuel</span>
+        </button>
+    </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBJgr9zdA4j1U-50b9TRfsoqrE3pIxmee4",
@@ -92,49 +108,30 @@
         const db = getFirestore(app);
         const hudRef = doc(db, "settings", "hud_config");
 
-        let lastMph = 0;
-
-        // 1. CLOCK LOGIC
-        setInterval(() => {
-            const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString();
-        }, 1000);
-
-        // 2. MAIN APP INIT
-        window.initApp = () => {
-            const btn = document.getElementById('main-btn');
-            btn.innerText = "System_Active";
-            btn.classList.add('opacity-30');
+        // PAGE NAVIGATION LOGIC
+        window.showPage = (pageId) => {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('opacity-100', 'text-cyan-400'));
             
-            // TRACK AI TARGETS (LISTEN FROM CLOUD)
-            onSnapshot(collection(db, "active_targets"), (snap) => {
-                document.getElementById('target-count').innerText = snap.size;
-                if(snap.size > 0 && "vibrate" in navigator) navigator.vibrate(20);
-            });
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            document.getElementById(`nav-${pageId}`).classList.add('opacity-100', 'text-cyan-400');
+        };
+        showPage('drive'); // Set Default
 
-            // TRACK POSITION & SPEED
-            navigator.geolocation.watchPosition((pos) => {
-                document.getElementById('gps-dot').style.backgroundColor = '#00F0FF';
-                
-                // SPEED DEADZONE: If speed is less than 2.5 MPH, show 0 to prevent drifting numbers
-                let rawMph = (pos.coords.speed || 0) * 2.237;
-                let mph = rawMph < 2.5 ? 0 : Math.round(rawMph);
-                
-                document.getElementById('speed-val').innerText = mph.toString().padStart(2, '0');
-                document.getElementById('coords').innerText = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-                
-                // Update the visual ring (math for the circle fill)
-                const offset = 753 - (753 * (mph / 120));
-                document.getElementById('speed-ring').style.strokeDashoffset = offset;
+        // TELEMETRY LOGIC
+        navigator.geolocation.watchPosition((pos) => {
+            let rawMph = (pos.coords.speed || 0) * 2.237;
+            let mph = rawMph < 2.5 ? 0 : Math.round(rawMph);
+            document.getElementById('speed-val').innerText = mph.toString().padStart(2, '0');
+            
+            // Sync to Laptop HUD
+            updateDoc(hudRef, { gps_speed: mph });
+        }, null, { enableHighAccuracy: true });
 
-                updateDoc(hudRef, { gps_speed: mph });
-            }, null, { enableHighAccuracy: true });
-
-            // TRACK TILT (GYRO)
-            window.addEventListener("deviceorientation", (e) => {
-                const tilt = Math.min(Math.max(Math.round(e.gamma), -20), 20);
-                updateDoc(hudRef, { steering_tilt: tilt });
-            });
+        window.markHazard = () => {
+            if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
+            addDoc(collection(db, "hazards"), { timestamp: new Date(), type: "User_Manual_Mark" });
+            alert("Hazard Pinned to System");
         };
     </script>
 </body>
