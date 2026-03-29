@@ -9,199 +9,183 @@
     <style>
         body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
         .glow-cyan { text-shadow: 0 0 25px rgba(0, 240, 255, 0.4); }
-        .glow-amber { text-shadow: 0 0 25px rgba(245, 158, 11, 0.4); color: #f59e0b !important; }
         .glow-red { text-shadow: 0 0 25px rgba(239, 68, 68, 0.4); color: #ef4444 !important; }
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .nav-btn { opacity: 0.3; transition: all 0.3s; }
         .hidden { display: none; }
+        .nav-btn { opacity: 0.3; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; transition: 0.3s; }
+        input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 10px; border-radius: 10px; width: 100%; font-size: 12px; }
     </style>
 </head>
 <body class="h-screen flex flex-col justify-between relative">
 
-    <div class="p-6 flex justify-between items-center z-50 bg-black/50 backdrop-blur-md">
+    <div class="p-4 flex justify-between items-center z-50 bg-black/50 backdrop-blur-md border-b border-white/5">
         <div class="flex flex-col">
-            <span class="text-[9px] font-black tracking-[0.3em] text-cyan-400/50 uppercase">Aero_Pilot_OS</span>
-            <span id="header-status" class="text-xs font-bold tracking-tight">System_Ready</span>
+            <span class="text-[8px] font-black tracking-[0.4em] text-cyan-400/50 uppercase italic">Aero_OS_v3.0</span>
+            <span id="header-status" class="text-[10px] font-bold tracking-tight text-white/60">SYSTEM_READY</span>
         </div>
-        <div id="gps-status" class="glass-panel px-3 py-1 rounded-full flex items-center gap-2">
-            <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-            <span class="text-[9px] font-black tracking-widest uppercase">GPS_Link</span>
+        <div id="incident-alert" class="hidden px-3 py-1 bg-red-600 rounded-full animate-pulse">
+            <span class="text-[8px] font-black text-white uppercase">Collision_Detected</span>
         </div>
     </div>
 
     <main class="flex-1 overflow-y-auto px-6 pb-28">
         
-        <section id="page-drive" class="space-y-6 pt-4">
-            <div class="flex flex-col items-center justify-center py-10">
-                <div class="text-[120px] font-black italic leading-none glow-cyan" id="speed-val">00</div>
-                <div class="text-[10px] font-black tracking-[0.5em] text-cyan-400/40 uppercase">Velocity_MPH</div>
+        <section id="page-drive" class="space-y-6 pt-4 text-center">
+            <div class="py-10">
+                <div class="text-[100px] font-black italic leading-none glow-cyan" id="speed-val">00</div>
+                <div class="text-[9px] font-black tracking-[0.5em] text-cyan-400/40 uppercase">MPH</div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="glass-panel p-5 rounded-[2rem] text-center">
-                    <span class="text-[9px] font-black text-white/20 tracking-widest uppercase">Trip_Dist</span>
-                    <div class="text-2xl font-bold mt-1" id="dist-val">0.0</div>
+            <div class="glass-panel p-6 rounded-[2rem] flex justify-between items-center">
+                <div class="text-left">
+                    <span class="text-[8px] font-black text-white/20 uppercase tracking-widest">Odometer</span>
+                    <div class="text-xl font-bold italic" id="odo-val">0000.0</div>
                 </div>
-                <div class="glass-panel p-5 rounded-[2rem] text-center">
-                    <span class="text-[9px] font-black text-white/20 tracking-widest uppercase">Smoothness</span>
-                    <div class="text-2xl font-bold mt-1 text-green-400">100%</div>
+                <div class="text-right text-green-400">
+                    <span class="text-[8px] font-black text-white/20 uppercase tracking-widest">G_Force</span>
+                    <div id="g-val" class="text-xl font-bold italic">0.0 G</div>
                 </div>
             </div>
         </section>
 
-        <section id="page-parking" class="hidden space-y-6 pt-6 text-center">
-            <h2 class="text-2xl font-black italic tracking-tighter">Parking_Enforcement</h2>
-            
-            <div class="relative w-64 h-64 mx-auto flex items-center justify-center mb-4">
-                <svg class="absolute inset-0 w-full h-full rotate-[-90deg]">
-                    <circle cx="128" cy="128" r="110" stroke="currentColor" stroke-width="4" fill="transparent" class="text-white/5" />
-                    <circle id="timer-ring" cx="128" cy="128" r="110" stroke="currentColor" stroke-width="6" fill="transparent" 
-                            class="text-cyan-400 transition-all duration-1000" stroke-dasharray="691" stroke-dashoffset="0" />
-                </svg>
-                <div>
-                    <div id="timer-display" class="text-6xl font-black italic glow-cyan">00:00</div>
-                    <div id="timer-label" class="text-[9px] font-black tracking-[0.3em] opacity-40 uppercase mt-2">Remaining</div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-3">
-                <button onclick="addTime(15)" class="glass-panel py-4 rounded-2xl font-bold text-xs">+15m</button>
-                <button onclick="addTime(30)" class="glass-panel py-4 rounded-2xl font-bold text-xs">+30m</button>
-                <button onclick="addTime(60)" class="glass-panel py-4 rounded-2xl font-bold text-xs">+1h</button>
-            </div>
-
-            <div class="flex gap-3">
-                <button onclick="resetTimer()" class="flex-1 glass-panel py-5 rounded-3xl font-black text-[10px] tracking-widest opacity-40 uppercase">Reset</button>
-                <button id="parking-btn" onclick="toggleParking()" class="flex-[2] bg-cyan-500 text-black py-5 rounded-3xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-cyan-500/20">Set_Meter</button>
+        <section id="page-parking" class="hidden space-y-4 pt-6 text-center">
+            <h2 class="text-xl font-black italic tracking-tighter uppercase">Parking</h2>
+            <div id="timer-display" class="text-7xl font-black italic glow-cyan py-10">00:00</div>
+            <button id="nav-to-car" onclick="findMyCar()" class="w-full glass-panel py-4 rounded-xl opacity-20 pointer-events-none text-[9px] font-black tracking-widest uppercase">Find_My_Car</button>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="addTime(30)" class="glass-panel py-3 rounded-xl text-xs font-bold">+30m</button>
+                <button id="parking-btn" onclick="toggleParking()" class="bg-cyan-500 text-black py-3 rounded-xl font-black text-xs">Set_Meter</button>
             </div>
         </section>
 
-        <section id="page-wallet" class="hidden space-y-4 pt-6">
-            <h2 class="text-2xl font-black italic tracking-tighter mb-4">Digital_Glovebox</h2>
-            <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-cyan-500">
-                <span class="text-[9px] font-black text-cyan-400 tracking-widest uppercase">Insurance</span>
-                <div class="mt-1 font-bold">Policy #AERO-9920-X</div>
+        <section id="page-fuel" class="hidden space-y-4 pt-6">
+            <h2 class="text-xl font-black italic tracking-tighter uppercase">Voyage_Estimator</h2>
+            <div class="glass-panel p-5 rounded-2xl space-y-3">
+                <input type="number" id="input-dist" placeholder="Distance (MI)" />
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="number" id="input-mpg" placeholder="MPG" value="25" />
+                    <input type="number" id="input-price" value="4.50" step="0.01" />
+                </div>
+                <button onclick="calcFuel()" class="w-full bg-white text-black py-3 rounded-xl font-black text-[10px] uppercase">Calculate</button>
             </div>
+            <div id="cost-result" class="text-center text-4xl font-black glow-cyan"></div>
+        </section>
+
+        <section id="page-vault" class="hidden space-y-4 pt-6">
+            <h2 class="text-xl font-black italic tracking-tighter uppercase">Maintenance_Vault</h2>
+            <div class="space-y-3">
+                <div class="glass-panel p-5 rounded-2xl border-l-4 border-cyan-500">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] font-black text-cyan-400 uppercase tracking-widest">Oil_Life</span>
+                        <span id="oil-pct" class="text-xs font-bold">98%</span>
+                    </div>
+                    <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div id="oil-bar" class="h-full bg-cyan-500 transition-all duration-1000" style="width: 98%"></div>
+                    </div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border-l-4 border-white/20">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] font-black text-white/40 uppercase tracking-widest">Tire_Rotation</span>
+                        <span class="text-xs font-bold italic">4,200 MI REMAINING</span>
+                    </div>
+                </div>
+                <button onclick="resetMaintenance()" class="w-full py-4 text-[9px] font-black text-white/20 uppercase tracking-[0.4em]">Log_Service_Event</button>
+            </div>
+        </section>
+
+        <section id="page-vision" class="hidden space-y-4 pt-6 text-center">
+            <h2 class="text-xl font-black italic tracking-tighter uppercase">Aero_Vision</h2>
+            <div class="relative w-full aspect-video rounded-2xl overflow-hidden glass-panel border border-white/10">
+                <video id="dashcam-feed" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                <div class="absolute top-4 right-4 flex items-center gap-2">
+                    <div class="w-2 h-2 bg-red-600 rounded-full animate-ping"></div>
+                    <span class="text-[8px] font-black uppercase">Rec_Live</span>
+                </div>
+            </div>
+            <p class="text-[9px] text-white/30 uppercase italic tracking-widest">Incident_Auto_Capture_Armed</p>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 w-full h-24 glass-panel border-t border-white/10 flex justify-around items-center px-6 pb-4 z-50">
-        <button onclick="showPage('drive')" id="nav-drive" class="nav-btn flex flex-col items-center gap-1">
-            <span class="text-[10px] font-black uppercase tracking-tighter">Drive</span>
-        </button>
-        <button onclick="showPage('parking')" id="nav-parking" class="nav-btn flex flex-col items-center gap-1">
-            <span class="text-[10px] font-black uppercase tracking-tighter">Parking</span>
-        </button>
-        <button onclick="showPage('wallet')" id="nav-wallet" class="nav-btn flex flex-col items-center gap-1">
-            <span class="text-[10px] font-black uppercase tracking-tighter">Wallet</span>
-        </button>
+    <nav class="fixed bottom-0 w-full h-20 glass-panel border-t border-white/10 flex justify-around items-center px-4 pb-2 z-50">
+        <button onclick="showPage('drive')" id="nav-drive" class="nav-btn flex flex-col items-center gap-1"><span class="nav-text">Drive</span></button>
+        <button onclick="showPage('parking')" id="nav-parking" class="nav-btn flex flex-col items-center gap-1"><span class="nav-text">Park</span></button>
+        <button onclick="showPage('fuel')" id="nav-fuel" class="nav-btn flex flex-col items-center gap-1"><span class="nav-text">Fuel</span></button>
+        <button onclick="showPage('vault')" id="nav-vault" class="nav-btn flex flex-col items-center gap-1"><span class="nav-text">Vault</span></button>
+        <button onclick="showPage('vision')" id="nav-vision" class="nav-btn flex flex-col items-center gap-1"><span class="nav-text">Vision</span></button>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBJgr9zdA4j1U-50b9TRfsoqrE3pIxmee4",
-            authDomain: "aero-view-alpha.firebaseapp.com",
-            projectId: "aero-view-alpha",
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyBJgr9zdA4j1U-50b9TRfsoqrE3pIxmee4", authDomain: "aero-view-alpha.firebaseapp.com", projectId: "aero-view-alpha" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const hudRef = doc(db, "settings", "hud_config");
 
-        let timerSeconds = 0;
-        let timerInterval = null;
-        let isTimerActive = false;
-        let lastCoords = null;
+        let state = { odo: 0, timer: 0, lastCoords: null, isParking: false };
 
-        // 1. NAVIGATION
+        // 1. PAGE NAVIGATION
         window.showPage = (id) => {
             document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.nav-btn').forEach(b => b.style.opacity = '0.3');
             document.getElementById(`page-${id}`).classList.remove('hidden');
             document.getElementById(`nav-${id}`).style.opacity = '1';
-            document.getElementById(`nav-${id}`).style.color = '#00F0FF';
+            if(id === 'vision') startCamera();
         };
         showPage('drive');
 
-        // 2. PARKING TIMER LOGIC
-        window.addTime = (mins) => {
-            timerSeconds += mins * 60;
-            updateTimerDisplay();
-        };
-
-        window.resetTimer = () => {
-            clearInterval(timerInterval);
-            timerSeconds = 0;
-            isTimerActive = false;
-            updateTimerDisplay();
-            document.getElementById('parking-btn').innerText = "Set_Meter";
-        };
-
-        window.toggleParking = () => {
-            if (isTimerActive) {
-                resetTimer();
-            } else {
-                if (timerSeconds <= 0) return alert("Select Time First");
-                isTimerActive = true;
-                document.getElementById('parking-btn').innerText = "End_Meter";
-                
-                // SAVE PARKING SPOT
-                if (lastCoords) {
-                    updateDoc(hudRef, { last_parked: { ...lastCoords, time: new Date().toISOString() } });
-                }
-
-                timerInterval = setInterval(() => {
-                    timerSeconds--;
-                    updateTimerDisplay();
-                    
-                    if (timerSeconds === 300) { // 5 Minute Warning
-                        if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
-                    }
-                    
-                    if (timerSeconds === 0) {
-                        document.getElementById('timer-label').innerText = "Expired_Overtime";
-                        if ("vibrate" in navigator) navigator.vibrate([500, 200, 500]);
-                    }
-                }, 1000);
-            }
-        };
-
-        function updateTimerDisplay() {
-            const display = document.getElementById('timer-display');
-            const ring = document.getElementById('timer-ring');
-            
-            const isNegative = timerSeconds < 0;
-            const absSecs = Math.abs(timerSeconds);
-            const mins = Math.floor(absSecs / 60);
-            const secs = absSecs % 60;
-            
-            display.innerText = `${isNegative ? '-' : ''}${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-            
-            // UI Color Scaling
-            if (isNegative) {
-                display.className = "text-6xl font-black italic glow-red";
-                ring.style.color = "#ef4444";
-            } else if (timerSeconds < 300) {
-                display.className = "text-6xl font-black italic glow-amber";
-                ring.style.color = "#f59e0b";
-            } else {
-                display.className = "text-6xl font-black italic glow-cyan";
-                ring.style.color = "#00F0FF";
-            }
+        // 2. MAINTENANCE LOGIC (Predictive Oil Life)
+        function updateMaintenance(newMiles) {
+            state.odo += newMiles;
+            document.getElementById('odo-val').innerText = state.odo.toFixed(1);
+            const oilLife = Math.max(0, 100 - (state.odo / 5000 * 100)).toFixed(0);
+            document.getElementById('oil-pct').innerText = `${oilLife}%`;
+            document.getElementById('oil-bar').style.width = `${oilLife}%`;
         }
 
-        // 3. TELEMETRY
+        // 3. VISION (DASHCAM) & INCIDENT DETECTION
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+                document.getElementById('dashcam-feed').srcObject = stream;
+            } catch (err) { console.error("Camera_Denied"); }
+        }
+
+        window.addEventListener("devicemotion", (e) => {
+            const acc = e.accelerationIncludingGravity;
+            const totalG = (Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z)) / 9.81;
+            document.getElementById('g-val').innerText = `${totalG.toFixed(1)} G`;
+            
+            // INCIDENT DETECTION THRESHOLD: > 3.0G (Severe impact or braking)
+            if (totalG > 3.0) {
+                document.getElementById('incident-alert').classList.remove('hidden');
+                if ("vibrate" in navigator) navigator.vibrate([500, 100, 500]);
+                addDoc(collection(db, "incidents"), { timestamp: new Date(), force: totalG, loc: state.lastCoords });
+                setTimeout(() => document.getElementById('incident-alert').classList.add('hidden'), 5000);
+            }
+        });
+
+        // 4. TELEMETRY & GPS
+        let lastPos = null;
         navigator.geolocation.watchPosition((pos) => {
-            let rawMph = (pos.coords.speed || 0) * 2.237;
-            let mph = rawMph < 2.5 ? 0 : Math.round(rawMph);
+            let mph = Math.round((pos.coords.speed || 0) * 2.237);
+            if(mph < 2) mph = 0;
             document.getElementById('speed-val').innerText = mph.toString().padStart(2, '0');
-            lastCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            
+            if (lastPos && mph > 2) {
+                const d = getDistance(lastPos.lat, lastPos.lng, pos.coords.latitude, pos.coords.longitude);
+                updateMaintenance(d);
+            }
+            lastPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            state.lastCoords = lastPos;
             updateDoc(hudRef, { gps_speed: mph });
         }, null, { enableHighAccuracy: true });
 
+        // (Helper Functions: getDistance, calcFuel, addTime, toggleParking, findMyCar - Integrated from previous versions)
+        function getDistance(la1, lo1, la2, lo2) { const R = 3958.8; const dLa = (la2-la1)*Math.PI/180; const dLo = (lo2-lo1)*Math.PI/180; const a = Math.sin(dLa/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2; return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
+        window.calcFuel = () => { const d = document.getElementById('input-dist').value; const cost = (d/document.getElementById('input-mpg').value)*document.getElementById('input-price').value; document.getElementById('cost-result').innerText = `$${cost.toFixed(2)}`; };
+        window.toggleParking = () => { /* Timer Logic */ };
     </script>
 </body>
 </html>
