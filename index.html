@@ -3,61 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AeroPilot Dashboard</title>
+    <title>Aero-Pilot Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; -webkit-tap-highlight-color: transparent; }
-        .glow-cyan { text-shadow: 0 0 30px rgba(0, 240, 255, 0.4); }
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .stat-label { font-size: 10px; font-weight: 900; letter-spacing: 0.2em; color: rgba(0, 240, 255, 0.5); text-transform: uppercase; }
-        .active-ring { border: 2px solid #00F0FF; box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        body { background: #000; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .glow-cyan { text-shadow: 0 0 25px rgba(0, 240, 255, 0.5); }
+        .glass-panel { background: rgba(0, 240, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(0, 240, 255, 0.1); }
+        
+        /* Animated Grid Floor for "Visual Activity" */
+        .grid-bg {
+            background-image: linear-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 240, 255, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(500px) rotateX(60deg);
+            position: absolute; bottom: -100px; width: 200%; height: 100%;
+            left: -50%; z-index: 0; opacity: 0.3;
+        }
     </style>
 </head>
-<body class="h-screen flex flex-col justify-between p-6">
+<body class="h-screen flex flex-col justify-between p-6 relative overflow-hidden">
 
-    <div class="flex justify-between items-center pt-4">
-        <div class="flex items-center gap-2">
-            <div id="gps-indicator" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-            <span class="text-[10px] font-bold tracking-widest opacity-40 uppercase">GPS_LINK</span>
-        </div>
-        <div class="text-[10px] font-bold tracking-widest opacity-40 uppercase" id="current-time">00:00</div>
-    </div>
+    <div class="grid-bg"></div>
 
-    <div class="flex flex-col items-center">
-        <div id="smoothness-ring" class="relative w-72 h-72 rounded-full border-4 border-white/5 flex items-center justify-center transition-colors duration-500">
-            <div class="flex flex-col items-center">
-                <span id="speed" class="text-9xl font-black glow-cyan leading-none">0</span>
-                <span class="stat-label mt-2">MPH</span>
+    <div class="relative z-10 flex justify-between items-start">
+        <div class="space-y-1">
+            <div class="flex items-center gap-2">
+                <div id="gps-dot" class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                <span class="text-[9px] font-black tracking-[0.3em] opacity-60 uppercase">Uplink_Status</span>
             </div>
-            <div id="g-ball" class="absolute w-4 h-4 bg-cyan-400 rounded-full blur-[2px] transition-transform duration-100" style="transform: translate(0,0)"></div>
+            <div class="text-[10px] font-mono text-cyan-400/40" id="coords">WAITING_FOR_GPS...</div>
         </div>
-        <div id="status-msg" class="mt-6 text-[10px] font-bold text-cyan-400 tracking-[0.3em] uppercase">Ready_To_Drive</div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-        <div class="glass-card p-5 rounded-[2rem]">
-            <span class="stat-label">Distance</span>
-            <div class="text-2xl font-bold mt-1"><span id="trip-dist">0.0</span> <span class="text-xs opacity-30">MI</span></div>
-        </div>
-        <div class="glass-card p-5 rounded-[2rem]">
-            <span class="stat-label">Smoothness</span>
-            <div id="smooth-score" class="text-2xl font-bold mt-1 text-green-400">100%</div>
+        <div class="text-right">
+            <div class="text-[9px] font-black tracking-[0.3em] opacity-60 uppercase">Local_Time</div>
+            <div class="text-xs font-bold text-white" id="clock">00:00:00</div>
         </div>
     </div>
 
-    <div class="flex gap-4 mb-4">
-        <button onclick="markLocation()" class="flex-1 glass-card py-6 rounded-[2rem] active:scale-95 transition-transform flex flex-col items-center justify-center">
-            <span class="stat-label !text-white/60">Mark Spot</span>
-        </button>
-        <button onclick="toggleTrip()" id="trip-btn" class="flex-1 bg-cyan-500 text-black font-black uppercase tracking-widest text-xs py-6 rounded-[2rem] shadow-[0_10px_30px_rgba(6,182,212,0.3)] active:scale-95 transition-all">
-            Start Trip
+    <div class="relative z-10 flex flex-col items-center py-10">
+        <div class="relative w-64 h-64 flex items-center justify-center">
+            <svg class="absolute inset-0 w-full h-full rotate-[-90deg]">
+                <circle cx="128" cy="128" r="120" stroke="currentColor" stroke-width="2" fill="transparent" class="text-white/5" />
+                <circle id="speed-ring" cx="128" cy="128" r="120" stroke="currentColor" stroke-width="4" fill="transparent" 
+                        class="text-cyan-400 transition-all duration-300" stroke-dasharray="753" stroke-dashoffset="753" />
+            </svg>
+            
+            <div class="text-center">
+                <div id="speed-val" class="text-[100px] font-black leading-none glow-cyan italic">00</div>
+                <div class="text-[10px] font-black tracking-[0.5em] text-cyan-400/60 uppercase mt-2">Velocity_MPH</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="relative z-10 grid grid-cols-2 gap-4 mb-4">
+        <div class="glass-panel p-4 rounded-3xl">
+            <span class="text-[9px] font-black text-cyan-400/40 tracking-widest uppercase">AI_Vision</span>
+            <div class="flex items-end gap-2 mt-1">
+                <span id="target-count" class="text-2xl font-bold">0</span>
+                <span class="text-[9px] mb-1 opacity-40">TARGETS_LOCKED</span>
+            </div>
+        </div>
+        
+        <div class="glass-panel p-4 rounded-3xl">
+            <span class="text-[9px] font-black text-cyan-400/40 tracking-widest uppercase">G_Smoothness</span>
+            <div class="flex items-end gap-2 mt-1">
+                <span id="smooth-val" class="text-2xl font-bold text-green-400">100%</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="relative z-10">
+        <button onclick="initApp()" id="main-btn" class="w-full py-6 rounded-[2rem] bg-cyan-500 text-black font-black uppercase tracking-widest text-xs shadow-[0_10px_40px_rgba(6,182,212,0.4)] active:scale-95 transition-all">
+            Initialize_System
         </button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBJgr9zdA4j1U-50b9TRfsoqrE3pIxmee4",
@@ -69,109 +92,50 @@
         const db = getFirestore(app);
         const hudRef = doc(db, "settings", "hud_config");
 
-        let isDriving = false;
-        let startCoords = null;
-        let totalDist = 0;
-        let lastPos = null;
-        let smoothness = 100;
+        let lastMph = 0;
 
-        // 1. UPDATE TIME
+        // 1. CLOCK LOGIC
         setInterval(() => {
             const now = new Date();
-            document.getElementById('current-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
         }, 1000);
 
-        // 2. MAIN TELEMETRY LOOP
-        window.toggleTrip = () => {
-            isDriving = !isDriving;
-            const btn = document.getElementById('trip-btn');
-            btn.innerText = isDriving ? "End Trip" : "Start Trip";
-            btn.style.backgroundColor = isDriving ? "#ff0055" : "#06b6d4";
-            document.getElementById('status-msg').innerText = isDriving ? "Trip_In_Progress" : "Trip_Saved";
+        // 2. MAIN APP INIT
+        window.initApp = () => {
+            const btn = document.getElementById('main-btn');
+            btn.innerText = "System_Active";
+            btn.classList.add('opacity-30');
             
-            if (isDriving) {
-                totalDist = 0;
-                smoothness = 100;
-                startTracking();
-            } else {
-                saveTripToHistory();
-            }
-        };
-
-        function startTracking() {
-            navigator.geolocation.watchPosition((pos) => {
-                document.getElementById('gps-indicator').style.backgroundColor = '#22c55e';
-                
-                let mph = Math.round((pos.coords.speed || 0) * 2.237);
-                document.getElementById('speed').innerText = mph;
-
-                // Automatic Parking Detection
-                if (mph === 0 && isDriving) {
-                    updateDoc(hudRef, { last_parked: { lat: pos.coords.latitude, lng: pos.coords.longitude, time: new Date().toISOString() } });
-                }
-
-                // Distance Calculation
-                if (lastPos && mph > 1) {
-                    const d = getDistance(lastPos.lat, lastPos.lng, pos.coords.latitude, pos.coords.longitude);
-                    totalDist += d;
-                    document.getElementById('trip-dist').innerText = totalDist.toFixed(1);
-                }
-                lastPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-
-                // Sync to Cloud
-                updateDoc(hudRef, { gps_speed: mph, steering_tilt: 0 });
-            }, null, { enableHighAccuracy: true });
-        }
-
-        // 3. SMOOTHNESS & G-FORCE
-        window.addEventListener("devicemotion", (e) => {
-            const x = e.accelerationIncludingGravity.x || 0;
-            const y = e.accelerationIncludingGravity.y || 0;
-            
-            // Move the G-Ball visually
-            const ball = document.getElementById('g-ball');
-            ball.style.transform = `translate(${-x * 10}px, ${y * 10}px)`;
-
-            // Smoothness Logic: Penalty for high G-moves
-            const combinedG = Math.abs(x) + Math.abs(y);
-            if (combinedG > 15) {
-                smoothness = Math.max(0, smoothness - 1);
-                document.getElementById('smooth-score').innerText = `${smoothness}%`;
-                document.getElementById('smooth-score').style.color = smoothness < 70 ? '#ff0055' : '#22c55e';
-                
-                // Haptic feedback for harsh moves
-                if ("vibrate" in navigator) navigator.vibrate(50);
-            }
-        });
-
-        // 4. UTILS
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 3958.8; // Miles
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
-
-        window.markLocation = () => {
-            if (lastPos) {
-                addDoc(collection(db, "road_notes"), {
-                    coords: lastPos,
-                    timestamp: new Date().toISOString(),
-                    type: "User_Marked"
-                });
-                if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
-                alert("Location Pinned to Cloud");
-            }
-        };
-
-        async function saveTripToHistory() {
-            await addDoc(collection(db, "trip_history"), {
-                distance: totalDist.toFixed(2),
-                smoothness: smoothness,
-                date: new Date().toISOString()
+            // TRACK AI TARGETS (LISTEN FROM CLOUD)
+            onSnapshot(collection(db, "active_targets"), (snap) => {
+                document.getElementById('target-count').innerText = snap.size;
+                if(snap.size > 0 && "vibrate" in navigator) navigator.vibrate(20);
             });
-        }
+
+            // TRACK POSITION & SPEED
+            navigator.geolocation.watchPosition((pos) => {
+                document.getElementById('gps-dot').style.backgroundColor = '#00F0FF';
+                
+                // SPEED DEADZONE: If speed is less than 2.5 MPH, show 0 to prevent drifting numbers
+                let rawMph = (pos.coords.speed || 0) * 2.237;
+                let mph = rawMph < 2.5 ? 0 : Math.round(rawMph);
+                
+                document.getElementById('speed-val').innerText = mph.toString().padStart(2, '0');
+                document.getElementById('coords').innerText = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+                
+                // Update the visual ring (math for the circle fill)
+                const offset = 753 - (753 * (mph / 120));
+                document.getElementById('speed-ring').style.strokeDashoffset = offset;
+
+                updateDoc(hudRef, { gps_speed: mph });
+            }, null, { enableHighAccuracy: true });
+
+            // TRACK TILT (GYRO)
+            window.addEventListener("deviceorientation", (e) => {
+                const tilt = Math.min(Math.max(Math.round(e.gamma), -20), 20);
+                updateDoc(hudRef, { steering_tilt: tilt });
+            });
+        };
     </script>
 </body>
 </html>
