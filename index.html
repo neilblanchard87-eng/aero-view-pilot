@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aero-Pilot UK</title>
+    <title>Aero-Pilot UK v9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -14,153 +14,86 @@
         .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .hidden { display: none; }
         .nav-btn { opacity: 0.3; font-size: 7px; font-weight: 900; text-transform: uppercase; transition: 0.3s; }
-        .biz-btn { background: linear-gradient(135deg, #00F0FF 0%, #0072FF 100%); color: black; }
-        input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 12px; width: 100%; outline: none; }
+        .scan-overlay { border: 2px dashed var(--accent); position: absolute; top: 20%; left: 10%; width: 80%; height: 40%; pointer-events: none; }
+        .result-green { color: #22c55e; border-color: #22c55e; }
+        .result-red { color: #ef4444; border-color: #ef4444; }
     </style>
 </head>
 <body class="h-screen flex flex-col justify-between relative">
 
     <div class="p-4 flex justify-between items-center z-50 bg-black/50 backdrop-blur-md border-b border-white/5">
         <div class="flex flex-col">
-            <span class="text-[8px] font-black tracking-[0.4em] glow-accent uppercase italic">Aero_UK_v8.0</span>
-            <span id="header-status" class="text-[9px] font-bold text-white/40 uppercase">HMRC_Link: Active</span>
+            <span class="text-[8px] font-black tracking-[0.4em] glow-accent uppercase italic">Aero_Vision_UK</span>
+            <span id="current-time" class="text-[10px] font-bold text-white/60">18:21 SUN</span>
         </div>
-        <button onclick="toggleStealth()" class="glass-panel px-4 py-2 rounded-full border border-white/10 active:scale-90 transition-all">
-            <span class="text-[8px] font-black tracking-widest uppercase">Stealth</span>
-        </button>
+        <div class="flex items-center gap-3">
+             <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+             <span class="text-[8px] font-black tracking-widest opacity-40 uppercase">System_Live</span>
+        </div>
     </div>
 
     <main class="flex-1 overflow-y-auto px-6 pb-28">
         
-        <section id="page-drive" class="space-y-6 pt-4 text-center">
-            <div class="py-10">
-                <div class="text-[100px] font-black italic leading-none glow-accent" id="speed-val">00</div>
-                <div class="text-[9px] font-black tracking-[0.5em] opacity-40 uppercase">MPH</div>
-            </div>
+        <section id="page-drive" class="pt-10 text-center space-y-6">
+            <div class="text-[100px] font-black italic leading-none glow-accent" id="speed-val">00</div>
+            <div class="text-[9px] font-black tracking-[0.5em] opacity-40 uppercase">MPH</div>
+        </section>
+
+        <section id="page-vision" class="hidden space-y-4 pt-6 text-center">
+            <h2 class="text-xl font-black italic tracking-tighter uppercase">Sign_Interpreter</h2>
             
-            <div id="log-trigger" class="hidden animate-bounce">
-                <div class="glass-panel p-6 rounded-[2.5rem] border-2 border-cyan-500/30">
-                    <p class="text-[10px] font-black tracking-widest mb-4">JOURNEY ENDED: CLASSIFY TRIP?</p>
-                    <div class="flex gap-3">
-                        <button onclick="classifyTrip('Personal')" class="flex-1 py-4 glass-panel rounded-2xl text-[10px] font-black">PERSONAL</button>
-                        <button onclick="classifyTrip('Business')" class="flex-1 py-4 biz-btn rounded-2xl text-[10px] font-black">BUSINESS</button>
-                    </div>
+            <div class="relative w-full aspect-square rounded-3xl overflow-hidden glass-panel border border-white/10">
+                <video id="dashcam-feed" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                <div class="scan-overlay animate-pulse"></div>
+                
+                <div id="scan-result" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                    <div id="result-status" class="text-2xl font-black italic mb-2">SCANNING...</div>
+                    <p id="result-detail" class="text-[10px] tracking-widest opacity-60 uppercase">Analysing_UK_Restrictions</p>
+                    <button onclick="closeScan()" class="mt-8 text-[8px] font-black tracking-widest opacity-40 uppercase border-b border-white/20 pb-1">Dismiss</button>
                 </div>
             </div>
-        </section>
 
-        <section id="page-log" class="hidden space-y-6 pt-6">
-            <h2 class="text-xl font-black italic tracking-tighter uppercase text-center">HMRC_Logbook</h2>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="glass-panel p-5 rounded-2xl">
-                    <span class="text-[8px] font-black text-white/20 uppercase tracking-widest">Biz_Miles</span>
-                    <div id="biz-miles" class="text-2xl font-bold mt-1">0.0</div>
-                </div>
-                <div class="glass-panel p-5 rounded-2xl">
-                    <span class="text-[8px] font-black text-white/20 uppercase tracking-widest">Claim_Value</span>
-                    <div id="claim-val" class="text-2xl font-bold mt-1 text-green-400">£0.00</div>
-                </div>
-            </div>
-            <div id="history-list" class="space-y-2 opacity-60">
-                <p class="text-[8px] text-center tracking-widest">NO_RECENT_JOURNEYS</p>
-            </div>
-        </section>
-
-        <section id="page-fuel" class="hidden space-y-6 pt-6">
-            <h2 class="text-xl font-black italic tracking-tighter uppercase text-center">Fuel_Strategy</h2>
-            <div class="glass-panel p-6 rounded-2xl space-y-4">
-                <input type="number" id="input-dist" placeholder="Trip Distance (Miles)" />
-                <div class="grid grid-cols-2 gap-2">
-                    <input type="number" id="input-mpg" placeholder="Car MPG" value="45" />
-                    <input type="number" id="input-price-litre" placeholder="Pence/Litre" value="145.9" />
-                </div>
-                <button onclick="calcUKFuel()" class="w-full bg-white text-black py-4 rounded-xl font-black text-[10px] uppercase">Estimate_£_Cost</button>
-            </div>
-            <div id="fuel-result" class="text-center text-4xl font-black glow-accent"></div>
+            <button onclick="interpretSign()" class="w-full py-6 rounded-[2rem] bg-white text-black font-black uppercase tracking-widest text-[10px] shadow-xl">
+                Scan_Parking_Sign
+            </button>
         </section>
 
     </main>
 
-    <nav class="fixed bottom-0 w-full h-20 glass-panel border-t border-white/10 flex justify-around items-center px-2 pb-2 z-50">
+    <nav class="fixed bottom-0 w-full h-20 glass-panel border-t border-white/10 flex justify-around items-center px-4 pb-4 z-50">
         <button onclick="showPage('drive')" id="nav-drive" class="nav-btn flex flex-col items-center gap-1"><span>Drive</span></button>
-        <button onclick="showPage('log')" id="nav-log" class="nav-btn flex flex-col items-center gap-1"><span>Logbook</span></button>
-        <button onclick="showPage('fuel')" id="nav-fuel" class="nav-btn flex flex-col items-center gap-1"><span>Fuel</span></button>
+        <button onclick="showPage('vision')" id="nav-vision" class="nav-btn flex flex-col items-center gap-1"><span>Vision</span></button>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBJgr9zdA4j1U-50b9TRfsoqrE3pIxmee4", authDomain: "aero-view-alpha.firebaseapp.com", projectId: "aero-view-alpha" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const hudRef = doc(db, "settings", "hud_config");
 
-        let odo = 0, lastPos = null, currentTripDist = 0;
-        let bizTotal = 0;
+        // 1. CLOCK (Crucial for UK temporal restrictions)
+        setInterval(() => {
+            const now = new Date();
+            const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            document.getElementById('current-time').innerText = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')} ${days[now.getDay()]}`;
+        }, 1000);
 
-        window.showPage = (id) => {
-            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.style.opacity = '0.3');
-            document.getElementById(`page-${id}`).classList.remove('hidden');
-            document.getElementById(`nav-${id}`).style.opacity = '1';
-        };
-        showPage('drive');
-
-        // HMRC LOGBOOK LOGIC
-        window.classifyTrip = async (type) => {
-            if (type === 'Business') {
-                bizTotal += currentTripDist;
-                document.getElementById('biz-miles').innerText = bizTotal.toFixed(1);
-                document.getElementById('claim-val').innerText = `£${(bizTotal * 0.45).toFixed(2)}`;
-            }
+        // 2. VISION SCANNER
+        window.interpretSign = () => {
+            const resultBox = document.getElementById('scan-result');
+            const statusText = document.getElementById('result-status');
+            const detailText = document.getElementById('result-detail');
             
-            await addDoc(collection(db, "uk_logbook"), {
-                date: new Date().toISOString(),
-                miles: currentTripDist.toFixed(2),
-                category: type,
-                value: type === 'Business' ? (currentTripDist * 0.45) : 0
-            });
+            resultBox.classList.remove('hidden');
+            if ("vibrate" in navigator) navigator.vibrate([100, 50, 100]);
 
-            document.getElementById('log-trigger').classList.add('hidden');
-            currentTripDist = 0;
-            speak(`Journey saved as ${type}.`);
-        };
-
-        // UK FUEL MATH (Litres to Miles)
-        window.calcUKFuel = () => {
-            const dist = parseFloat(document.getElementById('input-dist').value);
-            const mpg = parseFloat(document.getElementById('input-mpg').value);
-            const pencePerLitre = parseFloat(document.getElementById('input-price-litre').value);
-            
-            // Formula: (Distance / MPG) * 4.546 (litres in a gallon) * (Pence / 100)
-            if (dist && mpg && pencePerLitre) {
-                const cost = (dist / mpg) * 4.546 * (pencePerLitre / 100);
-                document.getElementById('fuel-result').innerText = `£${cost.toFixed(2)}`;
-            }
-        };
-
-        function speak(t) { const m = new SpeechSynthesisUtterance(t); window.speechSynthesis.speak(m); }
-
-        navigator.geolocation.watchPosition((pos) => {
-            let mph = Math.round((pos.coords.speed || 0) * 2.237);
-            if (mph < 2) mph = 0;
-            document.getElementById('speed-val').innerText = mph.toString().padStart(2, '0');
-            
-            if (lastPos && mph > 2) {
-                const d = getDistance(lastPos.lat, lastPos.lng, pos.coords.latitude, pos.coords.longitude);
-                currentTripDist += d;
-            } else if (mph === 0 && currentTripDist > 0.1) {
-                // Trip Stopped - Show Classification UI
-                document.getElementById('log-trigger').classList.remove('hidden');
-            }
-
-            lastPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            updateDoc(hudRef, { gps_speed: mph });
-        }, null, { enableHighAccuracy: true });
-
-        function getDistance(la1, lo1, la2, lo2) { const R = 3958.8; const dLa = (la2-la1)*Math.PI/180; const dLo = (lo2-lo1)*Math.PI/180; const a = Math.sin(dLa/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2; return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
-        window.toggleStealth = () => { /* Stealth Logic */ };
-    </script>
-</body>
-</html>
+            // Simulation of AI Processing
+            setTimeout(() => {
+                const isSunday = new Date().getDay() === 0;
+                if (isSunday) {
+                    statusText.innerText = "SAFE_TO_PARK";
+                    statusText.className = "text-2xl font-black italic mb-2 text-green-500";
+                    detailText.innerText = "Sunday
